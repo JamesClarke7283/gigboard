@@ -29,17 +29,19 @@ end
 function gigboard.show_main_menu(player_name)
     local formspec = {
         "formspec_version[3]",
-        "size[8,9]",
+        "size[8,9.5]", -- Increased the height to fit all buttons without scrolling
         "label[0.3,0.5;Welcome to Gigboard]",
         "button[0.3,1.5;7.4,0.8;view_gigs;View Gigs]",
-        "button[0.3,2.7;7.4,0.8;post_gig;Post Gig]",
-        "button[0.3,3.9;7.4,0.8;btn_view_applications;View Applications]",  -- Changed the name here for consistency
-        "button[0.3,5.1;7.4,0.8;view_profiles;View Profiles]",
-        "button[0.3,6.3;7.4,0.8;view_my_profile;View My Profile]",
-        "button_exit[3,7.5;2,1;close;Close]"
+        "button[0.3,2.4;7.4,0.8;post_gig;Post Gig]",
+        "button[0.3,3.3;7.4,0.8;btn_view_applications;View Applications]",
+        "button[0.3,4.2;7.4,0.8;view_profiles;View Profiles]",
+        "button[0.3,5.1;7.4,0.8;view_my_profile;View My Profile]",
+        "button[0.3,6.0;7.4,0.8;add_category;Add Category]",
+        "button_exit[0.3,7.2;7.4,0.8;close;Close]"
     }
     minetest.show_formspec(player_name, "gigboard:main", table.concat(formspec, ""))
 end
+
 
 
 -- Function to show the Applications menu formspec
@@ -293,16 +295,18 @@ function gigboard.show_gig_details(player_name, gig)
     local apply_button_label = gig.type == "job" and "Apply for Job" or "Request Service"
 
     -- Add 'Apply' button only if the player is not the author and the gig is open
-    if not is_author and gig.status == "open" then
-        table.insert(formspec, "button[0.5,7;3,1;apply;".. apply_button_label .."]")
+    -- Allow admins to apply for their own gigs
+    if gig.status == "open" then
+        local apply_button_label = gig.type == "job" and "Apply for Job" or "Request Service"
+        formspec[#formspec + 1] = string.format("button[0.5,7;3,1;apply;%s]", apply_button_label)
     end
 
     table.insert(formspec, "button[5,7;3,1;back;Back]")
 
     -- Add Edit and Delete buttons for authors and admins
     if is_author or player_has_admin_priv then
-        table.insert(formspec, "button[0.5,8;3,1;edit_gig;Edit]")
-        table.insert(formspec, "button[3.5,8;3,1;delete_gig;Delete]")
+        formspec[#formspec + 1] = "button[0.5,8;3,1;edit_gig;Edit]"
+        formspec[#formspec + 1] = "button[3.5,8;3,1;delete_gig;Delete]"
     end
 
     minetest.show_formspec(player_name, "gigboard:gig_details_" .. gig.id , table.concat(formspec))
@@ -343,6 +347,22 @@ function gigboard.show_edit_gig_form(player_name, gig)
     minetest.show_formspec(player_name, "gigboard:edit_gig_" .. gig.id, table.concat(formspec, ""))
 end
 
-
+function gigboard.show_application_details_formspec(player_name, gig_id)
+    local gig = gigboard.get_gig_listing(gig_id)
+    if gig then
+        local formspec = {
+            "formspec_version[3]",
+            "size[8,6]",
+            "label[0.5,0.5;", minetest.formspec_escape("Gig: " .. gig.title), "]",
+            -- Add other gig details as necessary
+            "button[0.5,2;3,1;approve;Approve]",
+            "button[4.5,2;3,1;complete;Complete]",
+            "button[2.5,5;3,1;back;Back]"
+        }
+        minetest.show_formspec(player_name, "gigboard:application_details_" .. gig_id, table.concat(formspec, ""))
+    else
+        gigboard.send_notification(player_name, "Gig not found.")
+    end
+end
 
 

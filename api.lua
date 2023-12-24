@@ -91,7 +91,9 @@ end
 function gigboard.apply_for_gig(player_name, gig_id)
     local gig = gigboard.get_gig_listing(gig_id)
     if gig then
-        if gig.author == player_name then
+        local is_admin = minetest.check_player_privs(player_name, {gigboard_admin=true})
+        -- Allow admins to apply for their own gigs for testing purposes
+        if gig.author == player_name and not is_admin then
             gigboard.send_notification(player_name, "You cannot apply for your own " .. gig.type .. ".")
             return
         end
@@ -176,7 +178,15 @@ end
 
 
 -- Function to add a review
+-- Function to add a review
 function gigboard.add_review(reviewer_name, target_player_name, rating, comment)
+    local is_admin = minetest.check_player_privs(reviewer_name, {gigboard_admin=true})
+    -- Allow admins to review themselves for testing purposes
+    if reviewer_name == target_player_name and not is_admin then
+        gigboard.send_notification(reviewer_name, "You cannot review yourself.")
+        return
+    end
+
     local profile = gigboard.get_player_profile(target_player_name)
     table.insert(profile.reviews, {
         reviewer = reviewer_name,
@@ -185,7 +195,9 @@ function gigboard.add_review(reviewer_name, target_player_name, rating, comment)
         timestamp = os.time()
     })
     gigboard.save_player_profile(target_player_name, profile)
+    gigboard.send_notification(reviewer_name, "Review added.")
 end
+
 
 -- Function to delete a review
 function gigboard.delete_review(target_player_name, reviewer_name)
@@ -404,4 +416,28 @@ function gigboard.create_default_profile(player_name)
         services_offered = {}
     }
     gigboard.save_player_profile(player_name, default_profile)
+end
+
+function gigboard.handle_application_details(player_name, gig_id, fields)
+    local gig = gigboard.get_gig_listing(gig_id)
+    if not gig then
+        gigboard.send_notification(player_name, "Gig not found.")
+        return
+    end
+
+    if fields.approve then
+        -- Assuming 'approve' is the field name of the approve button in your application details form
+        if gig.status == "open" and not gig.approved_applicant then
+            gig.approved_applicant = player_name -- This should be the name of the applicant
+            gigboard.send_notification(gig.author, player_name .. " has been approved for the gig.")
+        end
+    elseif fields.complete then
+        -- Assuming 'complete' is the field name of the complete button in your application details form
+        if gig.status == "open" and gig.approved_applicant == player_name then
+            gigboard.complete_gig(gig_id)
+            gigboard.send_notification(player_name, "Gig marked as completed.")
+        end
+    end
+
+    gigboard.save_gig_listing(gig)
 end

@@ -123,35 +123,32 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         local gig_id = formname:match("gigboard:gig_details_(%d+)")
         gig_id = tonumber(gig_id)
         local gig = gigboard.get_gig_listing(gig_id)
+        local is_admin = minetest.check_player_privs(player_name, {gigboard_admin=true})
     
         if fields.apply then
-            -- Check if the player is trying to apply for the gig
-            if gig and gig_id and gig.author ~= player_name and gig.status == "open" then
+            -- Allow admins to apply for their own gigs for testing purposes
+            if gig and gig.status == "open" and (is_admin or gig.author ~= player_name) then
                 gigboard.apply_for_gig(player_name, gig_id)
             else
                 gigboard.send_notification(player_name, "Cannot apply for this gig.")
             end
         elseif fields.edit_gig then
-            -- Check if the player is trying to edit the gig
-            if gig and (player_name == gig.author or minetest.check_player_privs(player_name, {gigboard_admin=true})) then
-                -- Call function to show edit form for the gig
+            -- Allow admins to edit their own gigs for testing purposes
+            if gig and (is_admin or player_name == gig.author) then
                 gigboard.show_edit_gig_form(player_name, gig)
             else
                 gigboard.send_notification(player_name, "You do not have permission to edit this gig.")
             end
         elseif fields.delete_gig then
-            -- Check if the player is trying to delete the gig
-            if gig and (player_name == gig.author or minetest.check_player_privs(player_name, {gigboard_admin=true})) then
-                -- Delete the gig
+            -- Allow admins to delete their own gigs for testing purposes
+            if gig and (is_admin or player_name == gig.author) then
                 gigboard.delete_gig_listing(gig_id)
                 gigboard.send_notification(player_name, "Gig deleted successfully.")
-                -- Show the updated gig listings
                 gigboard.show_gig_listings_formspec(player_name)
             else
                 gigboard.send_notification(player_name, "You do not have permission to delete this gig.")
             end
         elseif fields.back then
-            -- Navigate back to the gig listings
             gigboard.show_gig_listings_formspec(player_name)
         end    
     elseif formname:find("gigboard:edit_gig_") and fields.submit_edit then
@@ -173,17 +170,24 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if target_player_name then
             gigboard.show_add_review_form(player_name, target_player_name)
         end  -- This ends the "add_review" if block
-    elseif formname == "gigboard:applications" and fields.application_list then
-        local event = minetest.explode_textlist_event(fields.application_list)
-        if event.type == "CHG" then
-            local selected_application = gigboard.get_application(event.index)
-            if selected_application then
-                gigboard.show_application_details(player_name, selected_application)
-            else
-                minetest.log("error", "Application not found for index: " .. tostring(event.index))
+    elseif formname == "gigboard:applications" then
+            if fields.applications_list then
+                local event = minetest.explode_textlist_event(fields.applications_list)
+                if event.type == "CHG" then
+                    local selected_application = gigboard.get_player_applications(player_name)[event.index]
+                    if selected_application then
+                        -- Add a function to show detailed application with approve/complete buttons
+                        gigboard.show_application_details_formspec(player_name, selected_application.gig_id)
+                    else
+                        gigboard.send_notification(player_name, "Application not found.")
+                    end
+                end
+            elseif fields.approve or fields.complete then
+                -- Call the function to handle approval and completion actions
+                local gig_id = formname:match("gigboard:application_details_(%d+)")
+                gigboard.handle_application_details(player_name, tonumber(gig_id), fields)
             end
         end
-    end  -- This ends the outermost if-elseif chain
 end)  -- This ends the function
 
 
