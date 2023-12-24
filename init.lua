@@ -35,12 +35,23 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             gigboard.show_profiles_formspec(player_name)
         elseif fields.view_my_profile then
             gigboard.show_player_profile(player_name, player_name)
+        elseif fields.add_category then
+            gigboard.show_add_category_formspec(player_name)
         end
+    elseif formname == "gigboard:add_category" then
+        gigboard.handle_add_category_submission(player_name, fields)
     else
-        -- Dispatch to other forms and fields based on formname...
-        gigboard.handle_forms(player, formname, fields)
+        -- Check if handle_forms is defined before calling it
+        if gigboard.handle_forms then
+            gigboard.handle_forms(player, formname, fields)
+        else
+            -- Handle the case where handle_forms is not defined
+            -- You can log an error, do nothing, or handle it in some other way
+            minetest.log("error", "gigboard.handle_forms is not defined.")
+        end
     end
 end)
+
 
 -- Register callback for when a player joins
 minetest.register_on_joinplayer(function(player)

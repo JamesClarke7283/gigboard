@@ -78,3 +78,22 @@ function gigboard.get_all_profiles()
 end
 
 
+-- Function to add a new category to the gigboard
+function gigboard.add_category(category_name)
+    local categories = gigboard.get_all_categories() or {}
+    if not categories[category_name] then
+        categories[category_name] = true
+        gigboard.storage:set_string("gigboard_categories", minetest.serialize(categories))
+        return true
+    end
+    return false
+end
+
+-- Function to retrieve all categories
+function gigboard.get_all_categories()
+    local categories_string = gigboard.storage:get_string("gigboard_categories")
+    if categories_string and categories_string ~= "" then
+        return minetest.deserialize(categories_string)
+    end
+    return {}
+end

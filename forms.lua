@@ -1,25 +1,30 @@
--- Function to show the form for posting a new gig
+-- Function to show the form for posting a new gig with better layout and a submit button
 function gigboard.show_post_gig_formspec(player_name)
-    local categories = table.concat(gigboard.get_unique_categories(), ",")
-    local gig_types = "Job,Service" -- Added gig types
+    local categories = gigboard.get_all_categories()
+    local categories_list = ""
+    for category, _ in pairs(categories) do
+        categories_list = categories_list == "" and category or categories_list .. "," .. category
+    end
+    local gig_types = "Job,Service"
 
     local formspec = {
         "formspec_version[4]",
-        "size[8,9]",
+        "size[8,10]",  -- Increased height for better spacing
         "label[0.5,0.5;Post a New Gig]",
-        "field[0.5,1.5;7.5,1;title;Title;]",
-        "textarea[0.5,2.5;7.5,3;description;Description;]",
+        "field[0.5,2;7.5,1;title;Title;]",
+        "textarea[0.5,3.5;7.5,2;description;Description;]",
         "field[0.5,6;7.5,1;fee;Fee (Emeralds);]",
-        "dropdown[0.5,7;7.5,1;category;"..categories..";1]",
-        "dropdown[0.5,8;7.5,1;gig_type;"..gig_types..";1]", -- Dropdown for gig types
-        "button[2.5,9;3,1;post_gig;Post Gig]",
-        "button_exit[5.5,9;2,1;cancel;Cancel]"
+        "dropdown[0.5,7;7.5,1;category;" .. categories_list .. ";1]",
+        "dropdown[0.5,8;7.5,1;gig_type;" .. gig_types .. ";1]",
+        "button[2.5,9;3,1;post_gig;Submit]",  -- Changed 'Post Gig' to 'Submit'
+        "button_exit[5.5,9;2,1;back;Back]"
     }
     minetest.show_formspec(player_name, "gigboard:post_gig", table.concat(formspec, ""))
 end
 
 
 -- Function to show the main Gigboard formspec with a personal profile view option
+-- Adjust the main menu to include an option to add categories
 function gigboard.show_main_formspec(player_name)
     local formspec = table.concat({
         "formspec_version[3]",
@@ -27,9 +32,10 @@ function gigboard.show_main_formspec(player_name)
         "label[0.3,0.5;Welcome to Gigboard]",
         "button[0.3,1.5;7.4,0.8;view_gigs;View Gigs]",
         "button[0.3,2.7;7.4,0.8;post_gig;Post Gig]",
-        "button[0.3,3.9;7.4,0.8;view_profiles;View Profiles]",
-        "button[0.3,5.1;7.4,0.8;view_my_profile;View My Profile]",
-        "button_exit[3,8;2,1;close;Close]"
+        "button[0.3,3.9;7.4,0.8;add_category;Add Category]",  -- New button to add category
+        "button[0.3,5.1;7.4,0.8;view_profiles;View Profiles]",
+        "button[0.3,6.3;7.4,0.8;view_my_profile;View My Profile]",
+        "button_exit[3,7.5;2,1;close;Close]"
     }, "")
     minetest.show_formspec(player_name, "gigboard:main", formspec)
 end
@@ -47,6 +53,8 @@ function gigboard.show_gig_listings_formspec(player_name, gig_type)
         y = y + 1
     end
 
+    formspec = formspec .. "button_exit[0.3,8.5;2,1;back;Back]"
+
     minetest.show_formspec(player_name, "gigboard:"..gig_type.."_listings", formspec)
 end
 
@@ -59,7 +67,8 @@ function gigboard.show_player_profile(player_name, target_player_name)
         "formspec_version[3]",
         "size[8,9]",
         "label[0.3,0.5;".. minetest.formspec_escape(target_player_name) .."'s Profile]",
-        "label[0.3,1;Reviews:]"
+        "label[0.3,1;Reviews:]" ..
+        "button_exit[0.3,8.5;2,1;back;Back]"
     }
     local y = 1.5
     for _, review in ipairs(profile.reviews) do
@@ -202,4 +211,28 @@ function gigboard.show_profiles_formspec(player_name)
         y = y + 0.8
     end
     minetest.show_formspec(player_name, "gigboard:view_profiles", table.concat(formspec, ""))
+end
+
+-- Function to show the form for adding a new category
+function gigboard.show_add_category_formspec(player_name)
+    local formspec = {
+        "formspec_version[4]",
+        "size[8,5]",
+        "label[0.5,0.5;Add a New Category]",
+        "field[0.5,1.5;7.5,1;category_name;Category Name;]",
+        "button[2.5,3;3,1;add_category;Add Category]",
+        "button_exit[5.5,3;2,1;cancel;Cancel]"
+    }
+    minetest.show_formspec(player_name, "gigboard:add_category", table.concat(formspec, ""))
+end
+
+-- Function to handle the new category submission
+function gigboard.handle_add_category_submission(player_name, fields)
+    if fields.add_category and fields.category_name and fields.category_name ~= "" then
+        if gigboard.add_category(fields.category_name) then
+            minetest.chat_send_player(player_name, "New category added: " .. fields.category_name)
+        else
+            minetest.chat_send_player(player_name, "Category already exists.")
+        end
+    end
 end

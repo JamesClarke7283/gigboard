@@ -298,12 +298,12 @@ end
 function gigboard.get_unique_categories()
     local categories = {}
     local unique_categories = {}
-    local all_jobs = gigboard.get_job_listings()
+    local all_gigs = gigboard.get_gig_listings()
 
-    for _, job in ipairs(all_jobs) do
-        if job.status == "open" and not categories[job.category] then
-            categories[job.category] = true
-            table.insert(unique_categories, job.category)
+    for _, gig in ipairs(all_gigs) do
+        if gig.status == "open" and not categories[gig.category] then
+            categories[gig.category] = true
+            table.insert(unique_categories, gig.category)
         end
     end
 
