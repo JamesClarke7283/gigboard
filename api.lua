@@ -462,30 +462,31 @@ function gigboard.handle_application_details(player_name, gig_id, fields)
         return
     end
 
-    local applicant_to_approve = nil
-
     -- Check for approval actions
     for field_name, _ in pairs(fields) do
-        if field_name:find("approve_") then
-            applicant_to_approve = field_name:match("approve_(.+)")
-            break  -- Exit the loop after finding the approval action
+        local applicant_name = field_name:match("^approve_(.+)$")
+        if applicant_name then
+            if gig.status == "open" and not gigboard.has_approved(gig, applicant_name) then
+                gig.approved_applicants = gig.approved_applicants or {}
+                table.insert(gig.approved_applicants, applicant_name)
+                gigboard.save_gig_listing(gig)
+                gigboard.send_notification(player_name, applicant_name .. " has been approved for the gig.")
+                gigboard.send_notification(applicant_name, "You have been approved for the gig: " .. gig.title)
+                return  -- Important to return after handling the action
+            else
+                gigboard.send_notification(player_name, "Applicant already approved or gig is not open for approvals.")
+            end
         end
     end
 
-    if applicant_to_approve then
-        if gig.status == "open" and not gigboard.has_approved(gig, applicant_to_approve) then
-            gig.approved_applicants = gig.approved_applicants or {}
-            table.insert(gig.approved_applicants, applicant_to_approve)
-            gigboard.save_gig_listing(gig)
-            gigboard.send_notification(player_name, applicant_to_approve .. " has been approved for the gig.")
-            gigboard.send_notification(applicant_to_approve, "You have been approved for the gig: " .. gig.title)
-        else
-            gigboard.send_notification(player_name, "Applicant already approved or gig is not open for approvals.")
-        end
-    elseif fields.complete then
+    if fields.complete then
         -- Complete the gig with the current player as the completer
         gigboard.complete_gig(gig_id, player_name)
     end
+
+    gigboard.save_gig_listing(gig)
+end
+
 
     gigboard.save_gig_listing(gig)
 end
