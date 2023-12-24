@@ -1,26 +1,32 @@
--- Function to post a new gig (job or service)
+
 function gigboard.post_gig(player_name, title, description, fee, category, gig_type)
     local max_gigs = gigboard.config.max_gigs_per_player
     local open_gigs = gigboard.get_open_gigs(player_name, gig_type)
+    local balance = emeraldbank.get_emeralds(player_name) 
     
-    if #open_gigs < max_gigs then
-        local gig_data = {
-            author = player_name,
-            title = title,
-            description = description,
-            fee = fee,
-            status = "open",
-            category = category,
-            type = gig_type,
-            applicants = {},
-            approved_applicants = {}
-        }
-        gigboard.save_gig_listing(gig_data)
-        gigboard.send_notification(player_name, gig_type:sub(1,1):upper()..gig_type:sub(2).." posted successfully.")
+    if tonumber(fee) and tonumber(fee) > 0 and balance >= tonumber(fee) then
+        if #open_gigs < max_gigs then
+            local gig_data = {
+                author = player_name,
+                title = title,
+                description = description,
+                fee = fee,
+                status = "open",
+                category = category,
+                type = gig_type,
+                applicants = {},
+                approved_applicants = {}
+            }
+            gigboard.save_gig_listing(gig_data)
+            gigboard.send_notification(player_name, gig_type:sub(1,1):upper()..gig_type:sub(2).." posted successfully.")
+        else
+            gigboard.send_notification(player_name, "You have reached the maximum number of open gigs.")
+        end
     else
-        gigboard.send_notification(player_name, "You have reached the maximum number of open gigs.")
+        gigboard.send_notification(player_name, "Invalid fee amount or insufficient balance.")
     end
 end
+
 
 
 -- Function to retrieve open gigs posted by a player

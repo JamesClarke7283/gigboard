@@ -83,7 +83,25 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             gigboard.show_add_category_formspec(player_name)
         end  -- This ends the "gigboard:main" if block
     elseif formname == "gigboard:post_gig" and fields.post_gig then
-        gigboard.post_gig(player_name, fields.title, fields.description, fields.fee, fields.category, fields.gig_type)
+        -- Validate fields
+        local fee = tonumber(fields.fee)
+        local title = fields.title
+        local description = fields.description
+        local category = fields.category
+        local gig_type = fields.gig_type
+
+        if not title or title == "" or not description or description == "" then
+            gigboard.send_notification(player_name, "Title and description cannot be empty.")
+            return
+        end
+
+        if not fee or fee <= 0 then
+            gigboard.send_notification(player_name, "Invalid fee amount.")
+            return
+        end
+
+        -- Call gigboard.post_gig with validated values
+        gigboard.post_gig(player_name, title, description, fee, category, gig_type)
         gigboard.show_main_menu(player_name)
     elseif formname == "gigboard:add_category" then
         gigboard.handle_add_category_submission(player_name, fields)
