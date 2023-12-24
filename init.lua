@@ -120,31 +120,40 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
     elseif formname:find("gigboard:gig_details_") then
-            local gig_id = formname:match("gigboard:gig_details_(%d+)")
-            gig_id = tonumber(gig_id)
-            if fields.apply then
+        local gig_id = formname:match("gigboard:gig_details_(%d+)")
+        gig_id = tonumber(gig_id)
+        local gig = gigboard.get_gig_listing(gig_id)
+    
+        if fields.apply then
+            -- Check if the player is trying to apply for the gig
+            if gig and gig_id and gig.author ~= player_name and gig.status == "open" then
                 gigboard.apply_for_gig(player_name, gig_id)
+            else
+                gigboard.send_notification(player_name, "Cannot apply for this gig.")
             end
-            local gig = gigboard.get_gig_listing(gig_id)
-            if gig_id and fields.apply then
-                gigboard.apply_for_gig(player_name, gig_id)
-            elseif fields.edit_gig then
-                if gig and (player_name == gig.author or minetest.check_player_privs(player_name, {gigboard_admin=true})) then
-                    -- Call function to show edit form for the gig
-                    gigboard.show_edit_gig_form(player_name, gig)
-                end
-        
+        elseif fields.edit_gig then
+            -- Check if the player is trying to edit the gig
+            if gig and (player_name == gig.author or minetest.check_player_privs(player_name, {gigboard_admin=true})) then
+                -- Call function to show edit form for the gig
+                gigboard.show_edit_gig_form(player_name, gig)
+            else
+                gigboard.send_notification(player_name, "You do not have permission to edit this gig.")
+            end
         elseif fields.delete_gig then
+            -- Check if the player is trying to delete the gig
             if gig and (player_name == gig.author or minetest.check_player_privs(player_name, {gigboard_admin=true})) then
                 -- Delete the gig
                 gigboard.delete_gig_listing(gig_id)
                 gigboard.send_notification(player_name, "Gig deleted successfully.")
                 -- Show the updated gig listings
                 gigboard.show_gig_listings_formspec(player_name)
+            else
+                gigboard.send_notification(player_name, "You do not have permission to delete this gig.")
             end
         elseif fields.back then
+            -- Navigate back to the gig listings
             gigboard.show_gig_listings_formspec(player_name)
-        end
+        end    
     elseif formname:find("gigboard:edit_gig_") and fields.submit_edit then
             local gig_id = formname:match("gigboard:edit_gig_(%d+)")
             local gig = gigboard.get_gig_listing(tonumber(gig_id))

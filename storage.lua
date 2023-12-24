@@ -117,11 +117,13 @@ function gigboard.get_player_applications(player_name)
     -- This will store the application info relevant to the player
     local player_applications = {}
 
+    -- Check if the player is an admin
+    local is_admin = minetest.check_player_privs(player_name, {gigboard_admin=true})
+
     -- Iterate over each gig to check for applications
     for _, gig in ipairs(all_gigs) do
-        -- Check if the player is the author of the gig
-        if gig.author == player_name then
-            -- If the player is the author, add all the applicants of this gig to the player's applications
+        if is_admin or gig.author == player_name then
+            -- If the player is the author or an admin, add all the applicants of this gig
             if gig.applicants then
                 for _, applicant in ipairs(gig.applicants) do
                     table.insert(player_applications, {
@@ -132,17 +134,15 @@ function gigboard.get_player_applications(player_name)
                     })
                 end
             end
-        else
-            -- If the player is not the author, check if they have applied for this gig
+        elseif not is_admin then
+            -- If the player is not the author and not an admin, check if they have applied for this gig
             for _, applicant in ipairs(gig.applicants or {}) do
                 if applicant == player_name then
-                    -- If the player has applied, add this gig to their applications
                     table.insert(player_applications, {
                         gig_id = gig.id,
                         gig_title = gig.title,
                         status = (gig.approved_applicant == player_name) and "approved" or "applied"
                     })
-                    -- Since a player can only apply once per gig, break after adding it
                     break
                 end
             end
@@ -152,3 +152,4 @@ function gigboard.get_player_applications(player_name)
     -- Return the list of applications related to the player
     return player_applications
 end
+
