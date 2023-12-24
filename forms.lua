@@ -54,7 +54,8 @@ function gigboard.show_gig_listings_formspec(player_name)
 
     local list_items = {}
     for _, gig in ipairs(gigs) do
-        table.insert(list_items, minetest.formspec_escape(gig.title .. " by " .. gig.author .. " - " .. gig.type))
+        -- Include the category in the listing
+        table.insert(list_items, minetest.formspec_escape(gig.title .. " by " .. gig.author .. " - " .. gig.type .. " - " .. gig.category))
     end
 
     formspec[#formspec + 1] = table.concat(list_items, ",")
@@ -63,6 +64,7 @@ function gigboard.show_gig_listings_formspec(player_name)
 
     minetest.show_formspec(player_name, "gigboard:listings", table.concat(formspec))
 end
+
 
 
 
@@ -239,6 +241,8 @@ function gigboard.handle_add_category_submission(player_name, fields)
     end
 end
 
+-- Function to show gig details with Edit and Delete options for authors and admins
+-- Function to show gig details with Edit and Delete options for authors and admins
 function gigboard.show_gig_details(player_name, gig)
     local player_has_admin_priv = minetest.check_player_privs(player_name, {gigboard_admin=true})
     local is_author = player_name == gig.author
@@ -249,17 +253,62 @@ function gigboard.show_gig_details(player_name, gig)
         "label[0.5,0.5;", minetest.formspec_escape("Title: " .. gig.title), "]",
         "label[0.5,1;", minetest.formspec_escape("Author: " .. gig.author), "]",
         "label[0.5,1.5;", minetest.formspec_escape("Type: " .. gig.type), "]",
+        "label[0.5,2;", minetest.formspec_escape("Category: " .. gig.category), "]", -- Display the category
         "textarea[0.5,2.5;7.5,3;description;;", minetest.formspec_escape(gig.description), "]",
-        "label[0.5,6;", minetest.formspec_escape("Fee: " .. gig.fee), "]",
-        "button[0.5,7;3,1;apply;Apply for this ", gig.type, "]",
-        "button_exit[5,7;3,1;back;Back]"
+        "label[0.5,6;", minetest.formspec_escape("Fee: " .. gig.fee), "]"
     }
-    -- add buttons for editing and deleting if user is admin or author of the gig
-    if player_has_admin_priv or is_author then
+
+    -- Add 'Apply' button only if player is not the author
+    if not is_author then
+        table.insert(formspec, "button[0.5,7;3,1;apply;Apply for this ", gig.type, "]")
+    end
+
+    table.insert(formspec, "button_exit[5,7;3,1;back;Back]")
+
+    -- Add Edit and Delete buttons for authors and admins
+    if is_author or player_has_admin_priv then
         table.insert(formspec, "button[0.5,8;3,1;edit_gig;Edit]")
         table.insert(formspec, "button[3.5,8;3,1;delete_gig;Delete]")
     end
 
     minetest.show_formspec(player_name, "gigboard:gig_details_" .. gig.id , table.concat(formspec))
 end
+
+
+
+-- Function to show the form for editing an existing gig
+function gigboard.show_edit_gig_form(player_name, gig)
+    local categories = gigboard.get_all_categories()
+    local categories_list = ""
+    local current_category_index = 1  -- Default to the first category in the list
+    local index = 1  -- Initialize index to iterate over categories
+
+    -- Build the categories list string and find the current category index
+    for category, _ in pairs(categories) do
+        categories_list = categories_list == "" and category or categories_list .. "," .. category
+        if category == gig.category then
+            current_category_index = index  -- Set the index to the gig's current category
+        end
+        index = index + 1  -- Increment index
+    end
+
+    -- Make sure to construct the formspec correctly
+    local formspec = {
+        "formspec_version[4]",
+        "size[8,10]",
+        "label[0.5,0.5;Edit Gig]",
+        "field[0.5,2;7.5,1;title;Title;", minetest.formspec_escape(gig.title), "]",
+        "textarea[0.5,3.5;7.5,2;description;Description;", minetest.formspec_escape(gig.description), "]",
+        "field[0.5,6;7.5,1;fee;Fee (Emeralds);", tostring(gig.fee), "]",
+        "dropdown[0.5,7;7.5,1;category;", categories_list, ";", tostring(current_category_index), "]",  -- Ensure index is a string
+        "button[2.5,9;3,1;submit_edit;Submit Changes]",
+        "button_exit[5.5,9;2,1;cancel;Cancel]"
+    }
+
+    -- Display the formspec to the player
+    minetest.show_formspec(player_name, "gigboard:edit_gig_" .. gig.id, table.concat(formspec, ""))
+end
+
+
+
 

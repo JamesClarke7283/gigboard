@@ -1,22 +1,30 @@
--- Function to save a gig listing with incremental IDs
+
+-- Function to save or update a gig listing
 function gigboard.save_gig_listing(gig_data)
-    -- Retrieve the current gig count and increment it for the new ID
-    local gig_count = gigboard.storage:get_int("gigboard_gig_count") or 0
-    local new_gig_id = gig_count + 1
-    gigboard.storage:set_int("gigboard_gig_count", new_gig_id)
+    if gig_data.id then
+        -- Update existing gig
+        gigboard.storage:set_string("gigboard_gig_"..gig_data.id, minetest.serialize(gig_data))
+        minetest.log("action", "[GIGBOARD] Updated gig: " .. minetest.serialize(gig_data))
+    else
+        -- Save new gig
+        local gig_count = gigboard.storage:get_int("gigboard_gig_count") or 0
+        local new_gig_id = gig_count + 1
+        gigboard.storage:set_int("gigboard_gig_count", new_gig_id)
 
-    -- Set gig ID
-    gig_data.id = new_gig_id
+        -- Set gig ID
+        gig_data.id = new_gig_id
 
-    -- Save the new gig data
-    gigboard.storage:set_string("gigboard_gig_"..new_gig_id, minetest.serialize(gig_data))
+        -- Save the new gig data
+        gigboard.storage:set_string("gigboard_gig_"..new_gig_id, minetest.serialize(gig_data))
 
-    -- Update player's gig list
-    local player_gigs = minetest.deserialize(gigboard.storage:get_string("gigboard_"..gig_data.author.."_gigs")) or {}
-    table.insert(player_gigs, new_gig_id)
-    gigboard.storage:set_string("gigboard_"..gig_data.author.."_gigs", minetest.serialize(player_gigs))
-    minetest.log("action", "[GIGBOARD] Saved gig: " .. minetest.serialize(gig_data))
+        -- Update player's gig list
+        local player_gigs = minetest.deserialize(gigboard.storage:get_string("gigboard_"..gig_data.author.."_gigs")) or {}
+        table.insert(player_gigs, new_gig_id)
+        gigboard.storage:set_string("gigboard_"..gig_data.author.."_gigs", minetest.serialize(player_gigs))
+        minetest.log("action", "[GIGBOARD] Saved new gig: " .. minetest.serialize(gig_data))
+    end
 end
+
 
 
 -- Function to retrieve all gig listings
