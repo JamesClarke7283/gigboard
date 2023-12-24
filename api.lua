@@ -481,6 +481,7 @@ function gigboard.handle_application_details(player_name, gig_id, fields)
     elseif fields.complete then
         if applicant_to_approve then
             gigboard.complete_gig(gig_id, applicant_to_approve)
+        end
     end
 
     gigboard.save_gig_listing(gig)
