@@ -6,12 +6,14 @@ Gigboard enables players to post and apply for jobs or offer and seek services, 
 - **Player Profiles with Reviews:** Profiles show a player's history in jobs/services and an average star rating (1-5 stars) based on reviews from other players. Reviews can include a star rating and a text comment.
 - **View and Interact with Profiles:** Access profiles through job listings, applicant screens, or a dedicated "Profiles" section via the `/gigboard` command.
 - **Review Management:** Players can add, edit, or delete their reviews on others' profiles.
-- **Manage Applicants:** Review, approve, or reject applicants for jobs.
+- **Manage Applicants:** Review, approve, or reject applicants for jobs. This includes viewing applications related to a player, either for gigs they've applied to or gigs they've posted that have applicants.
+- **Applications Section:** Players can view and manage their applications, offering a centralized location to track gig progress and interactions.
 - **Completion and Payment:** Automatic fund transfer upon mutual job completion confirmation.
 - **Admin Moderation:** Admins with `gigboard_admin` privilege can manage listings and intervene in disputes.
 - **Listing Limits:** Configurable limits for posting jobs and services, with defaults set at 5 each.
-- **Notifications:** Alerts for significant events like job completion and applicant approval.
+- **Notifications:** Alerts for significant events like job completion, applicant approval, and more.
 - **Sorting Mechanism:** Sort listings by Title, Author, and Fee.
+- **Category Management:** Allows the addition of new categories to organize gigs effectively.
 
 ## Economy Integration
 - **Emerald Bank Dependency:** Uses Emerald Bank for initial transaction handling.
@@ -40,4 +42,4 @@ Gigboard enables players to post and apply for jobs or offer and seek services, 
 - **Admin Privileges:** Special privileges for server admins.
 
 # Technical's
-Behind the scenes it uses emeraldbank.transfer_emeralds(player1_name, player2_name, num_of_emeralds) to transfer emeralds and emeraldbank.get_emeralds(player_name) to check if have enough emeralds.
+Behind the scenes, it uses `emeraldbank.transfer_emeralds(player1_name, player2_name, num_of_emeralds)` to transfer emeralds and `emeraldbank.get_emeralds(player_name)` to check if players have enough emeralds.
