@@ -356,9 +356,11 @@ function gigboard.show_application_details_formspec(player_name, gig_id)
             "label[0.5,0.5;", minetest.formspec_escape("Gig: " .. gig.title), "]",
         }
 
-        -- Add an approve button for each applicant
         for i, applicant in ipairs(gig.applicants or {}) do
-            table.insert(formspec, "button[0.5,".. tostring(1 + i) .. ";7,1;approve_" .. minetest.formspec_escape(applicant) .. ";Approve " .. minetest.formspec_escape(applicant) .. "]")
+            -- Add approve button only if the current player is not the applicant
+            if applicant ~= player_name then
+                table.insert(formspec, "button[0.5,".. tostring(1 + i) .. ";7,1;approve_" .. minetest.formspec_escape(applicant) .. ";Approve " .. minetest.formspec_escape(applicant) .. "]")
+            end
         end
 
         table.insert(formspec, "button[0.5," .. tostring(2 + #gig.applicants) .. ";7,1;back;Back]")
@@ -367,6 +369,7 @@ function gigboard.show_application_details_formspec(player_name, gig_id)
         gigboard.send_notification(player_name, "Gig not found.")
     end
 end
+
 
 
 

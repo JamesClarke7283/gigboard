@@ -462,17 +462,17 @@ function gigboard.handle_application_details(player_name, gig_id, fields)
         return
     end
 
-    -- Check for approval actions
     for field_name, _ in pairs(fields) do
         local applicant_name = field_name:match("^approve_(.+)$")
         if applicant_name then
+            minetest.log("action", "[GIGBOARD] Approve button pressed for " .. applicant_name)
             if gig.status == "open" and not gigboard.has_approved(gig, applicant_name) then
                 gig.approved_applicants = gig.approved_applicants or {}
                 table.insert(gig.approved_applicants, applicant_name)
                 gigboard.save_gig_listing(gig)
                 gigboard.send_notification(player_name, applicant_name .. " has been approved for the gig.")
                 gigboard.send_notification(applicant_name, "You have been approved for the gig: " .. gig.title)
-                return  -- Important to return after handling the action
+                return
             else
                 gigboard.send_notification(player_name, "Applicant already approved or gig is not open for approvals.")
             end
@@ -480,7 +480,6 @@ function gigboard.handle_application_details(player_name, gig_id, fields)
     end
 
     if fields.complete then
-        -- Complete the gig with the current player as the completer
         gigboard.complete_gig(gig_id, player_name)
     end
 
