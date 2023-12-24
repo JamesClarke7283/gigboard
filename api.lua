@@ -79,8 +79,10 @@ function gigboard.complete_gig(gig_id, completed_by_player_name)
 
             if author_player and completed_by_player then
                 local balance = emeraldbank.get_emeralds(gig.author)
+                minetest.log("action", "[gigboard] Balance: " .. balance)
                 if balance >= gig.fee then
                     -- Call transfer_emeralds with player objects
+                    minetest.log("action", "[gigboard] Transferring " .. gig.fee .. " emeralds from " .. gig.author .. " to " .. completed_by_player_name)
                     emeraldbank.transfer_emeralds(author_player, completed_by_player, gig.fee)
                     gigboard.send_notification(gig.author, "Payment transferred to " .. completed_by_player_name)
                 else
