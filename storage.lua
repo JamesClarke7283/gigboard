@@ -60,5 +60,21 @@ function gigboard.delete_gig_listing(gig_id)
     end
 end
 
+-- Function to retrieve all player profiles from mod storage
+function gigboard.get_all_profiles()
+    -- Assume each profile is stored in mod storage with a key "profile_<playername>"
+    local profiles = {}
+    local storage_keys = gigboard.storage:to_table().fields -- This gets all keys in the storage
+    for key, _ in pairs(storage_keys) do
+        if key:find("^profile_") then
+            local profile_data = gigboard.storage:get_string(key)
+            if profile_data and profile_data ~= "" then
+                local profile = minetest.deserialize(profile_data)
+                table.insert(profiles, profile)
+            end
+        end
+    end
+    return profiles
+end
 
 

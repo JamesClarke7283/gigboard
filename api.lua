@@ -135,10 +135,12 @@ function gigboard.get_player_profile(player_name)
     end
 end
 
--- Function to save player profile
+-- Function to save player profile into mod storage
 function gigboard.save_player_profile(player_name, profile_data)
-    gigboard.storage:set_string("profile_"..player_name, minetest.serialize(profile_data))
+    local key = "profile_"..player_name
+    gigboard.storage:set_string(key, minetest.serialize(profile_data))
 end
+
 
 -- Function to add a review
 function gigboard.add_review(reviewer_name, target_player_name, rating, comment)
@@ -188,7 +190,7 @@ function gigboard.on_receive_job_application_form(player_name, form_name, fields
     end
 end
 
-minetest.register_on_player_receive_fields(gigboard.on_receive_job_application_form)
+
 
 -- Function to handle job application form submission
 function gigboard.handle_job_application_form(player_name, form_name, fields)
@@ -209,11 +211,6 @@ function gigboard.handle_review_form(player_name, form_name, fields)
         gigboard.send_notification(player_name, "Review added.")
     end
 end
-
-minetest.register_on_player_receive_fields(function(player, form_name, fields)
-    gigboard.handle_job_application_form(player:get_player_name(), form_name, fields)
-    gigboard.handle_review_form(player:get_player_name(), form_name, fields)
-end)
 
 -- Function to approve an applicant for a job
 function gigboard.approve_applicant(gig_id, applicant_name)
@@ -311,4 +308,15 @@ function gigboard.get_unique_categories()
     end
 
     return unique_categories
+end
+
+-- Function to initialize a default profile for new players
+function gigboard.create_default_profile(player_name)
+    local default_profile = {
+        name = player_name,
+        reviews = {},
+        gigs_completed = 0,
+        services_offered = {}
+    }
+    gigboard.save_player_profile(player_name, default_profile)
 end

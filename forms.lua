@@ -93,8 +93,6 @@ function gigboard.show_add_review_form(player_name, target_player_name)
     minetest.show_formspec(player_name, "gigboard:add_review_" .. target_player_name, table.concat(formspec, ""))
 end
 
-minetest.register_on_player_receive_fields(gigboard.on_receive_fields)
-
 
 -- Function to show job application form
 function gigboard.show_job_application_form(player_name, job_id)
@@ -140,10 +138,6 @@ function gigboard.handle_approve_applicant_form(player_name, form_name, fields)
         end
     end
 end
-
-minetest.register_on_player_receive_fields(function(player, form_name, fields)
-    gigboard.handle_approve_applicant_form(player:get_player_name(), form_name, fields)
-end)
 
 
 
@@ -194,3 +188,18 @@ function gigboard.show_update_job_status_form(player_name, job_id)
 end
 
 
+-- Function to show all profiles
+function gigboard.show_profiles_formspec(player_name)
+    local all_profiles = gigboard.get_all_profiles()
+    local formspec = {
+        "formspec_version[3]",
+        "size[8,9]",
+        "label[0.3,0.5;All Profiles]",
+    }
+    local y = 1
+    for _, profile in ipairs(all_profiles) do
+        formspec[#formspec+1] = "button[0.3,".. y ..";7.4,0.8;profile_".. profile.name ..";" .. minetest.formspec_escape(profile.name) .. "]"
+        y = y + 0.8
+    end
+    minetest.show_formspec(player_name, "gigboard:view_profiles", table.concat(formspec, ""))
+end
