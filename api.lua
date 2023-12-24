@@ -71,13 +71,24 @@ function gigboard.complete_gig(gig_id, completed_by_player_name)
 
         gig.status = "completed"
         gigboard.save_gig_listing(gig)
+
         if gig.type == "job" then
-            local balance = emeraldbank.get_emeralds(gig.author)
-            if balance >= gig.fee then
-                emeraldbank.transfer_emeralds(gig.author, completed_by_player_name, gig.fee)
-                gigboard.send_notification(gig.author, "Payment transferred to " .. completed_by_player_name)
+            -- Get player objects from player names
+            local author_player = minetest.get_player_by_name(gig.author)
+            local completed_by_player = minetest.get_player_by_name(completed_by_player_name)
+
+            if author_player and completed_by_player then
+                local balance = emeraldbank.get_emeralds(gig.author)
+                if balance >= gig.fee then
+                    -- Call transfer_emeralds with player objects
+                    emeraldbank.transfer_emeralds(author_player, completed_by_player, gig.fee)
+                    gigboard.send_notification(gig.author, "Payment transferred to " .. completed_by_player_name)
+                else
+                    gigboard.send_notification(gig.author, "Insufficient balance to complete the payment to " .. completed_by_player_name)
+                    return false
+                end
             else
-                gigboard.send_notification(gig.author, "Insufficient balance to complete the payment to " .. completed_by_player_name)
+                gigboard.send_notification(gig.author, "Error: Author or applicant player object not found.")
                 return false
             end
         else
@@ -89,6 +100,7 @@ function gigboard.complete_gig(gig_id, completed_by_player_name)
         return false
     end
 end
+
 
 
 
