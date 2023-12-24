@@ -22,6 +22,12 @@ minetest.register_chatcommand("gigboard", {
     end,
 })
 
+-- Define gigboard_admin privilege
+minetest.register_privilege("gigboard_admin", {
+    description = "Privilege for administrating Gigboard mod",
+    give_to_singleplayer = false,
+})
+
 -- Here is where we handle the form submissions
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     local player_name = player:get_player_name()

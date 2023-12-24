@@ -240,6 +240,9 @@ function gigboard.handle_add_category_submission(player_name, fields)
 end
 
 function gigboard.show_gig_details(player_name, gig)
+    local player_has_admin_priv = minetest.check_player_privs(player_name, {gigboard_admin=true})
+    local is_author = player_name == gig.author
+
     local formspec = {
         "formspec_version[3]",
         "size[8,9]",
@@ -251,6 +254,12 @@ function gigboard.show_gig_details(player_name, gig)
         "button[0.5,7;3,1;apply;Apply for this ", gig.type, "]",
         "button_exit[5,7;3,1;back;Back]"
     }
-    minetest.show_formspec(player_name, "gigboard:gig_details_" .. gig.id, table.concat(formspec, ""))
+    -- add buttons for editing and deleting if user is admin or author of the gig
+    if player_has_admin_priv or is_author then
+        table.insert(formspec, "button[0.5,8;3,1;edit_gig;Edit]")
+        table.insert(formspec, "button[3.5,8;3,1;delete_gig;Delete]")
+    end
+
+    minetest.show_formspec(player_name, "gigboard:gig_details_" .. gig.id , table.concat(formspec))
 end
 
