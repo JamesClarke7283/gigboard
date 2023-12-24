@@ -14,6 +14,20 @@ dofile(modpath.."/forms.lua")
 dofile(modpath.."/utils.lua")
 -- Removed the duplicate config.lua load here
 
+-- Register clear_gigboard command
+minetest.register_chatcommand("clear_gigboard", {
+    description = "Clears all gigboard data",
+    privs = {gigboard_admin=true},
+    func = function(player_name)
+        if gigboard.clear_all_data() then
+            return true, "All gigboard data has been cleared."
+        else
+            return false, "Failed to clear gigboard data."
+        end
+    end,
+})
+
+
 -- Register /gigboard command
 minetest.register_chatcommand("gigboard", {
     description = "Open the Gigboard interface",
