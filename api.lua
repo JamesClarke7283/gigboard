@@ -70,20 +70,20 @@ function gigboard.get_gig_listing(job_id)
     return gigboard.storage:get_string("gig_"..job_id) -- Assuming JSON format
 end
 
--- Function for a player to apply for a job
-function gigboard.apply_for_job(player_name, job_id)
-    local job = gigboard.get_job_listing(job_id)
-    if job and job.status == "open" then
-        job.applicants = job.applicants or {}
-        if not gigboard.has_applied(job, player_name) then
-            table.insert(job.applicants, player_name)
-            gigboard.save_job_listing(job)
-            gigboard.send_notification(player_name, "Applied for job successfully.")
+-- Function for a player to apply for a gig (job or service)
+function gigboard.apply_for_gig(player_name, gig_id)
+    local gig = gigboard.get_gig_listing(gig_id)
+    if gig and gig.status == "open" then
+        gig.applicants = gig.applicants or {}
+        if not gigboard.has_applied(gig, player_name) then
+            table.insert(gig.applicants, player_name)
+            gigboard.save_gig_listing(gig)
+            gigboard.send_notification(player_name, "Applied for gig successfully.")
         else
-            gigboard.send_notification(player_name, "Already applied for this job.")
+            gigboard.send_notification(player_name, "Already applied for this gig.")
         end
     else
-        gigboard.send_notification(player_name, "Job is not available.")
+        gigboard.send_notification(player_name, "Gig is not available.")
     end
 end
 
