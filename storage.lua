@@ -109,3 +109,46 @@ function gigboard.get_all_categories()
     end
     return {}
 end
+
+-- Function to get applications related to a player - either gigs they've applied to, or gigs they've posted that have applicants
+function gigboard.get_player_applications(player_name)
+    -- Retrieve all gigs from the storage
+    local all_gigs = gigboard.get_gig_listings()
+    -- This will store the application info relevant to the player
+    local player_applications = {}
+
+    -- Iterate over each gig to check for applications
+    for _, gig in ipairs(all_gigs) do
+        -- Check if the player is the author of the gig
+        if gig.author == player_name then
+            -- If the player is the author, add all the applicants of this gig to the player's applications
+            if gig.applicants then
+                for _, applicant in ipairs(gig.applicants) do
+                    table.insert(player_applications, {
+                        gig_id = gig.id,
+                        gig_title = gig.title,
+                        applicant = applicant,
+                        status = (gig.approved_applicant == applicant) and "approved" or "applied"
+                    })
+                end
+            end
+        else
+            -- If the player is not the author, check if they have applied for this gig
+            for _, applicant in ipairs(gig.applicants or {}) do
+                if applicant == player_name then
+                    -- If the player has applied, add this gig to their applications
+                    table.insert(player_applications, {
+                        gig_id = gig.id,
+                        gig_title = gig.title,
+                        status = (gig.approved_applicant == player_name) and "approved" or "applied"
+                    })
+                    -- Since a player can only apply once per gig, break after adding it
+                    break
+                end
+            end
+        end
+    end
+
+    -- Return the list of applications related to the player
+    return player_applications
+end

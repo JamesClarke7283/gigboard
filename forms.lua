@@ -5,7 +5,7 @@ function gigboard.show_post_gig_formspec(player_name)
     for category, _ in pairs(categories) do
         categories_list = categories_list == "" and category or categories_list .. "," .. category
     end
-    local gig_types = "Job,Service"
+    local gig_types = "job,service"
 
     local formspec = {
         "formspec_version[4]",
@@ -33,12 +33,34 @@ function gigboard.show_main_menu(player_name)
         "label[0.3,0.5;Welcome to Gigboard]",
         "button[0.3,1.5;7.4,0.8;view_gigs;View Gigs]",
         "button[0.3,2.7;7.4,0.8;post_gig;Post Gig]",
-        "button[0.3,3.9;7.4,0.8;add_category;Add Category]",
+        "button[0.3,3.9;7.4,0.8;applications;View Applications]",
         "button[0.3,5.1;7.4,0.8;view_profiles;View Profiles]",
         "button[0.3,6.3;7.4,0.8;view_my_profile;View My Profile]",
         "button_exit[3,7.5;2,1;close;Close]"
     }, "")
     minetest.show_formspec(player_name, "gigboard:main", formspec)
+end
+
+-- Function to show the Applications menu formspec
+function gigboard.show_applications_formspec(player_name)
+    local applications = gigboard.get_player_applications(player_name) -- You'll need to implement this function
+    local formspec = {
+        "formspec_version[3]",
+        "size[8,9]",
+        "label[0.3,0.5;Your Applications]",
+        "textlist[0.3,1;7.4,7;applications_list;"
+    }
+
+    local list_items = {}
+    for _, app in ipairs(applications) do
+        table.insert(list_items, minetest.formspec_escape(app.gig.title .. " - " .. app.status))
+    end
+
+    formspec[#formspec + 1] = table.concat(list_items, ",")
+    formspec[#formspec + 1] = ";1;false]"
+    formspec[#formspec + 1] = "button[0.3,8.5;7.4,0.8;back;Back]"
+
+    minetest.show_formspec(player_name, "gigboard:applications", table.concat(formspec))
 end
 
 
@@ -264,9 +286,11 @@ function gigboard.show_gig_details(player_name, gig)
         "label[0.5,6;", minetest.formspec_escape("Fee: " .. gig.fee), "]"
     }
 
-    -- Add 'Apply' button only if player is not the author
-    if not is_author then
-        table.insert(formspec, "button[0.5,7;3,1;apply;Apply for this ", gig.type, "]")
+    local apply_button_label = gig.type == "job" and "Apply for Job" or "Request Service"
+
+    -- Add 'Apply' button only if the player is not the author and the gig is open
+    if not is_author and gig.status == "open" then
+        table.insert(formspec, "button[0.5,7;3,1;apply;".. apply_button_label .."]")
     end
 
     table.insert(formspec, "button[5,7;3,1;back;Back]")

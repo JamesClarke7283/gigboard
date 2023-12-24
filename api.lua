@@ -11,7 +11,9 @@ function gigboard.post_gig(player_name, title, description, fee, category, gig_t
             fee = fee,
             status = "open",
             category = category,
-            type = gig_type -- 'job' or 'service'
+            type = gig_type,
+            applicants = {},
+            approved_applicants = {}
         }
         gigboard.save_gig_listing(gig_data)
         gigboard.send_notification(player_name, gig_type:sub(1,1):upper()..gig_type:sub(2).." posted successfully.")
@@ -77,19 +79,29 @@ end
 -- Function for a player to apply for a gig (job or service)
 function gigboard.apply_for_gig(player_name, gig_id)
     local gig = gigboard.get_gig_listing(gig_id)
-    if gig and gig.status == "open" then
-        gig.applicants = gig.applicants or {}
-        if not gigboard.has_applied(gig, player_name) then
-            table.insert(gig.applicants, player_name)
-            gigboard.save_gig_listing(gig)
-            gigboard.send_notification(player_name, "Applied for " .. gig.type:sub(1,1):upper()..gig.type:sub(2) .. " successfully.")
+    if gig then
+        if gig.author == player_name then
+            gigboard.send_notification(player_name, "You cannot apply for your own " .. gig.type .. ".")
+            return
+        end
+        
+        if gig.status == "open" then
+            gig.applicants = gig.applicants or {}
+            if not gigboard.has_applied(gig, player_name) then
+                table.insert(gig.applicants, player_name)
+                gigboard.save_gig_listing(gig)
+                gigboard.send_notification(player_name, "Applied for " .. gig.type:sub(1,1):upper()..gig.type:sub(2) .. " successfully.")
+            else
+                gigboard.send_notification(player_name, "Already applied for this " .. gig.type .. ".")
+            end
         else
-            gigboard.send_notification(player_name, "Already applied for this " .. gig.type .. ".")
+            gigboard.send_notification(player_name, gig.type:sub(1,1):upper()..gig.type:sub(2) .. " is not available.")
         end
     else
-        gigboard.send_notification(player_name, gig.type:sub(1,1):upper()..gig.type:sub(2) .. " is not available.")
+        gigboard.send_notification(player_name, "Gig not found.")
     end
 end
+
 
 
 -- Function for admin to manage job listings
@@ -200,6 +212,28 @@ function gigboard.on_receive_job_application_form(player_name, form_name, fields
     end
 end
 
+-- Function to handle application actions
+function gigboard.handle_application_action(player_name, gig_id, action)
+    local gig = gigboard.get_gig_listing(gig_id)
+    if not gig then
+        gigboard.send_notification(player_name, "Gig not found.")
+        return
+    end
+
+    if action == "approve" then
+        gig.approved_applicant = player_name
+        gigboard.send_notification(player_name, "You have approved the application for: " .. gig.title)
+    elseif action == "deny" then
+        gig.approved_applicant = nil -- Assuming you have a field to track approval
+        gigboard.send_notification(player_name, "You have denied the application for: " .. gig.title)
+    elseif action == "confirm" then
+        gig.status = "completed"
+        gigboard.complete_gig_with_transfer(gig_id) -- This function will need to be implemented as well
+    end
+
+    gigboard.save_gig_listing(gig)
+end
+
 
 
 -- Function to handle job application form submission
@@ -210,6 +244,19 @@ function gigboard.handle_job_application_form(player_name, form_name, fields)
         gigboard.send_notification(player_name, "Application submitted.")
     end
 end
+
+-- Function to transfer funds between players
+function gigboard.transfer_funds(source_player, target_player, amount)
+    local balance = emeraldbank.get_emeralds(source_player) -- You'll need to implement this function
+    if balance >= amount then
+        emeraldbank.transfer_emeralds(source_player, target_player, amount) -- And this one too
+        gigboard.send_notification(source_player, "Payment of " .. amount .. " emeralds transferred to " .. target_player)
+        gigboard.send_notification(target_player, "Received payment of " .. amount .. " emeralds from " .. source_player)
+    else
+        gigboard.send_notification(source_player, "Insufficient balance to complete the payment.")
+    end
+end
+
 
 -- Function to handle review form submission
 function gigboard.handle_review_form(player_name, form_name, fields)

@@ -100,16 +100,20 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
             end
         end
     elseif formname:find("gigboard:gig_details_") then
-        local gig_id = formname:match("gigboard:gig_details_(%d+)")
-        gig_id = tonumber(gig_id)
-        local gig = gigboard.get_gig_listing(gig_id)
-        if gig_id and fields.apply then
-            gigboard.apply_for_gig(player_name, gig_id)
-        elseif fields.edit_gig then
-            if gig and (player_name == gig.author or minetest.check_player_privs(player_name, {gigboard_admin=true})) then
-                -- Call function to show edit form for the gig
-                gigboard.show_edit_gig_form(player_name, gig)
+            local gig_id = formname:match("gigboard:gig_details_(%d+)")
+            gig_id = tonumber(gig_id)
+            if fields.apply then
+                gigboard.apply_for_gig(player_name, gig_id)
             end
+            local gig = gigboard.get_gig_listing(gig_id)
+            if gig_id and fields.apply then
+                gigboard.apply_for_gig(player_name, gig_id)
+            elseif fields.edit_gig then
+                if gig and (player_name == gig.author or minetest.check_player_privs(player_name, {gigboard_admin=true})) then
+                    -- Call function to show edit form for the gig
+                    gigboard.show_edit_gig_form(player_name, gig)
+                end
+        
         elseif fields.delete_gig then
             if gig and (player_name == gig.author or minetest.check_player_privs(player_name, {gigboard_admin=true})) then
                 -- Delete the gig
