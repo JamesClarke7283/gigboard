@@ -43,20 +43,27 @@ end
 
 
 -- Function to show job listings or service listings based on the type
-function gigboard.show_gig_listings_formspec(player_name, gig_type)
-    local gigs = gigboard.get_gig_listings(gig_type)
-    local formspec = "formspec_version[3]size[8,9]label[0.3,0.5;"..gig_type.." Listings]"
+function gigboard.show_gig_listings_formspec(player_name)
+    local gigs = gigboard.get_gig_listings()
+    local formspec = {
+        "formspec_version[3]",
+        "size[8,9]",
+        "label[0.3,0.5;Listings]",
+        "textlist[0.3,1;7.4,7;gig_list;"
+    }
 
-    local y = 1
+    local list_items = {}
     for _, gig in ipairs(gigs) do
-        formspec = formspec .. "button[0.3,".. y ..";7.4,0.8;gig_".. gig.id ..";" .. minetest.formspec_escape(gig.title) .. "]"
-        y = y + 1
+        table.insert(list_items, minetest.formspec_escape(gig.title .. " by " .. gig.author .. " - " .. gig.type))
     end
 
-    formspec = formspec .. "button_exit[0.3,8.5;2,1;back;Back]"
+    formspec[#formspec + 1] = table.concat(list_items, ",")
+    formspec[#formspec + 1] = ";1;false]"
+    formspec[#formspec + 1] = "button_exit[0.3,8.5;2,1;back;Back]"
 
-    minetest.show_formspec(player_name, "gigboard:"..gig_type.."_listings", formspec)
+    minetest.show_formspec(player_name, "gigboard:listings", table.concat(formspec))
 end
+
 
 
 
@@ -67,17 +74,21 @@ function gigboard.show_player_profile(player_name, target_player_name)
         "formspec_version[3]",
         "size[8,9]",
         "label[0.3,0.5;".. minetest.formspec_escape(target_player_name) .."'s Profile]",
-        "label[0.3,1;Reviews:]" ..
-        "button_exit[0.3,8.5;2,1;back;Back]"
+        "label[0.3,1;Reviews:]"
     }
     local y = 1.5
     for _, review in ipairs(profile.reviews) do
         formspec[#formspec+1] = "label[0.5,".. y .. ";" .. minetest.formspec_escape(review.reviewer) .. ": " .. review.rating .. " stars - " .. minetest.formspec_escape(review.comment) .. "]"
         y = y + 0.5
     end
-    formspec[#formspec+1] = "button[0.3,".. y .. ";4,1;add_review;Add Review]"
+    -- Only add the "Add Review" button if the player is not viewing their own profile
+    if player_name ~= target_player_name then
+        formspec[#formspec+1] = "button[0.3,".. y .. ";4,1;add_review;Add Review]"
+    end
+    formspec[#formspec+1] = "button_exit[3.5,".. (y+0.5) ..";2,1;back;Back]"
     minetest.show_formspec(player_name, "gigboard:player_profile_" .. target_player_name, table.concat(formspec, ""))
 end
+
 
 -- Callback function for receiving fields in formspecs
 function gigboard.on_receive_fields(player_name, form_name, fields)
@@ -146,15 +157,6 @@ function gigboard.handle_approve_applicant_form(player_name, form_name, fields)
             break
         end
     end
-end
-
-
-
--- Placeholder function to get player profile
-function gigboard.get_player_profile(player_name)
-    -- Retrieve player profile data
-    -- Placeholder code
-    return {}
 end
 
 -- Function to show job cancellation form
@@ -236,3 +238,19 @@ function gigboard.handle_add_category_submission(player_name, fields)
         end
     end
 end
+
+function gigboard.show_gig_details(player_name, gig)
+    local formspec = {
+        "formspec_version[3]",
+        "size[8,9]",
+        "label[0.5,0.5;", minetest.formspec_escape("Title: " .. gig.title), "]",
+        "label[0.5,1;", minetest.formspec_escape("Author: " .. gig.author), "]",
+        "label[0.5,1.5;", minetest.formspec_escape("Type: " .. gig.type), "]",
+        "textarea[0.5,2.5;7.5,3;description;;", minetest.formspec_escape(gig.description), "]",
+        "label[0.5,6;", minetest.formspec_escape("Fee: " .. gig.fee), "]",
+        "button[0.5,7;3,1;apply;Apply for this ", gig.type, "]",
+        "button_exit[5,7;3,1;back;Back]"
+    }
+    minetest.show_formspec(player_name, "gigboard:gig_details_" .. gig.id, table.concat(formspec, ""))
+end
+

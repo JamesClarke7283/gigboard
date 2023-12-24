@@ -23,8 +23,9 @@ end
 
 -- Function to retrieve open gigs posted by a player
 function gigboard.get_open_gigs(player_name, gig_type)
-    local all_gigs = gigboard.get_player_gigs(player_name, gig_type)
+    local all_gigs = gigboard.get_player_gigs(player_name) -- This should already be a table
     local open_gigs = {}
+
     for _, gig_id in ipairs(all_gigs) do
         local gig = gigboard.get_gig_listing(gig_id)
         if gig and gig.status == "open" and gig.type == gig_type then
@@ -37,8 +38,11 @@ end
 
 -- Function to retrieve jobs posted by a player
 function gigboard.get_player_gigs(player_name)
-    return gigboard.storage:get_string("gigboard_"..player_name.."_gigs") -- Assuming JSON format
+    local gigs_string = gigboard.storage:get_string("gigboard_"..player_name.."_gigs")
+    return gigs_string and gigs_string ~= "" and minetest.deserialize(gigs_string) or {}
 end
+
+
 
 -- Function to complete a job
 function gigboard.complete_gig(gig_id)
@@ -129,11 +133,17 @@ end
 function gigboard.get_player_profile(player_name)
     local profile_string = gigboard.storage:get_string("gigboard_profile_"..player_name)
     if profile_string and profile_string ~= "" then
-        return minetest.deserialize(profile_string)
+        local profile = minetest.deserialize(profile_string)
+        -- Initialize reviews as a table if it's nil
+        profile.reviews = profile.reviews or {}
+        return profile
     else
+        -- If no profile is found, return a default structure with an empty reviews table
         return {name = player_name, reviews = {}, gigs_completed = 0, services_offered = {}}
     end
 end
+
+
 
 -- Function to save player profile into mod storage
 function gigboard.save_player_profile(player_name, profile_data)

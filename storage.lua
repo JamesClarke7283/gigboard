@@ -15,25 +15,29 @@ function gigboard.save_gig_listing(gig_data)
     local player_gigs = minetest.deserialize(gigboard.storage:get_string("gigboard_"..gig_data.author.."_gigs")) or {}
     table.insert(player_gigs, new_gig_id)
     gigboard.storage:set_string("gigboard_"..gig_data.author.."_gigs", minetest.serialize(player_gigs))
+    minetest.log("action", "[GIGBOARD] Saved gig: " .. minetest.serialize(gig_data))
 end
 
 
--- Function to retrieve all gig listings of a certain type
-function gigboard.get_gig_listings(gig_type)
-    -- This function should be updated to only retrieve gigs of the specified type
+-- Function to retrieve all gig listings
+function gigboard.get_gig_listings()
     local gig_count = gigboard.storage:get_int("gigboard_gig_count") or 0
     local gig_list = {}
     for i = 1, gig_count do
         local gig_data_string = gigboard.storage:get_string("gigboard_gig_"..i)
         if gig_data_string ~= "" then
             local gig = minetest.deserialize(gig_data_string)
-            if gig.type == gig_type then
+            if gig then
                 table.insert(gig_list, gig)
             end
         end
     end
+    -- Debug print
+    minetest.log("action","Retrieved gig list: " .. minetest.serialize(gig_list))
     return gig_list
 end
+
+
 
 -- Function to retrieve a specific job listing
 function gigboard.get_gig_listing(gig_id)

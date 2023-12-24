@@ -6,3 +6,7 @@ function gigboard.calculate_average_rating(ratings)
     end
     return total / #ratings
 end
+
+function gigboard.send_notification(player_name, message)
+    minetest.chat_send_player(player_name, "[GIGBOARD] "..message)
+end
