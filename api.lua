@@ -488,7 +488,3 @@ function gigboard.handle_application_details(player_name, gig_id, fields)
 end
 
 
-    gigboard.save_gig_listing(gig)
-end
-
-
