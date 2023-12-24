@@ -354,11 +354,14 @@ function gigboard.show_application_details_formspec(player_name, gig_id)
             "formspec_version[3]",
             "size[8,6]",
             "label[0.5,0.5;", minetest.formspec_escape("Gig: " .. gig.title), "]",
-            -- Add other gig details as necessary
-            "button[0.5,2;3,1;approve;Approve]",
             "button[4.5,2;3,1;complete;Complete]",
             "button[2.5,5;3,1;back;Back]"
         }
+
+        if gig.author == player_name then
+            table.insert(formspec, "button[0.5,2;3,1;approve;Approve]")
+        end
+
         minetest.show_formspec(player_name, "gigboard:application_details_" .. gig_id, table.concat(formspec, ""))
     else
         gigboard.send_notification(player_name, "Gig not found.")

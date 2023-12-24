@@ -69,20 +69,29 @@ function gigboard.complete_gig(gig_id, completed_by_player_name)
             return false
         end
 
-        gig.status = "completed"
-        gigboard.save_gig_listing(gig)
+        -- Prevent self-transfer
+        if gig.author == completed_by_player_name then
+            gigboard.send_notification(gig.author, "Cannot transfer funds to yourself.")
+            return false
+        end
 
-        if gig.type == "job" then
-            -- Get player objects from player names
+        -- Track completion status
+        gig.completion_confirmation = gig.completion_confirmation or {}
+        gig.completion_confirmation[gig.author] = gig.completion_confirmation[gig.author] or false
+        gig.completion_confirmation[completed_by_player_name] = true
+
+        -- Check if both parties have marked the gig as complete
+        if gig.completion_confirmation[gig.author] and gig.completion_confirmation[completed_by_player_name] then
+            gig.status = "completed"
+            gigboard.save_gig_listing(gig)
+
+            -- Transfer logic
             local author_player = minetest.get_player_by_name(gig.author)
             local completed_by_player = minetest.get_player_by_name(completed_by_player_name)
 
             if author_player and completed_by_player then
                 local balance = emeraldbank.get_emeralds(gig.author)
-                minetest.log("action", "[gigboard] Balance: " .. balance)
                 if balance >= gig.fee then
-                    -- Call transfer_emeralds with player objects
-                    minetest.log("action", "[gigboard] Transferring " .. gig.fee .. " emeralds from " .. gig.author .. " to " .. completed_by_player_name)
                     emeraldbank.transfer_emeralds(author_player, completed_by_player, gig.fee)
                     gigboard.send_notification(gig.author, "Payment transferred to " .. completed_by_player_name)
                 else
@@ -94,9 +103,10 @@ function gigboard.complete_gig(gig_id, completed_by_player_name)
                 return false
             end
         else
-            gigboard.send_notification(gig.author, gig.type:sub(1,1):upper()..gig.type:sub(2).." marked as completed.")
+            gigboard.send_notification(gig.author, "Waiting for the other party to mark the gig as complete.")
+            gigboard.save_gig_listing(gig)
+            return false
         end
-        return true
     else
         gigboard.send_notification(gig.author, "Gig not found or already completed.")
         return false
