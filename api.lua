@@ -461,50 +461,28 @@ function gigboard.handle_application_details(player_name, gig_id, fields)
         gigboard.send_notification(player_name, "Gig not found.")
         return
     end
-
-    if fields.approve then
-        -- Assuming 'approve' is the field name of the approve button in your application details form
-        if gig.status == "open" then
-            -- Insert the player_name into the approved_applicants list if not already present
-            gig.approved_applicants = gig.approved_applicants or {}
-            local already_approved = false
-            for _, approved_applicant in pairs(gig.approved_applicants) do
-                if approved_applicant == player_name then
-                    already_approved = true
-                    break
-                end
-            end
-            if not already_approved then
-                table.insert(gig.approved_applicants, player_name)
-                gigboard.send_notification(gig.author, player_name .. " has been approved for the gig.")
+    local applicant_to_approve = nil
+    -- Check for approval actions
+    for field_name, _ in pairs(fields) do
+        if field_name:find("approve_") then
+            applicant_to_approve = field_name:match("approve_(.+)")
+            if gig.status == "open" and not gigboard.has_approved(gig, applicant_to_approve) then
+                gig.approved_applicants = gig.approved_applicants or {}
+                table.insert(gig.approved_applicants, applicant_to_approve)
+                gigboard.save_gig_listing(gig)
+                gigboard.send_notification(player_name, applicant_to_approve .. " has been approved for the gig.")
+                gigboard.send_notification(applicant_to_approve, "You have been approved for the gig: " .. gig.title)
             else
-                gigboard.send_notification(player_name, "You have already been approved for this gig.")
+                gigboard.send_notification(player_name, "Applicant already approved or gig is not open for approvals.")
             end
+            return
         end
+    end
     elseif fields.complete then
-        -- Handle the completion of the gig
-        if gig.status == "open" and gig.approved_applicants then
-            local completed_by_player_name = nil
-            for _, approved_applicant in pairs(gig.approved_applicants) do
-                if approved_applicant == player_name then
-                    completed_by_player_name = approved_applicant
-                    break
-                end
-            end
-            if completed_by_player_name then
-                local success = gigboard.complete_gig(gig_id, completed_by_player_name)
-                if success then
-                    gigboard.send_notification(player_name, "Gig marked as completed and payment transferred.")
-                else
-                    gigboard.send_notification(player_name, "There was an issue completing the gig.")
-                end
-            else
-                gigboard.send_notification(player_name, "You are not an approved applicant for this gig or it has already been completed.")
-            end
-        else
-            gigboard.send_notification(player_name, "Gig is either not open or you are not approved for it.")
-        end
+        if applicant_to_approve then
+            gigboard.complete_gig(gig_id, applicant_to_approve)
     end
 
     gigboard.save_gig_listing(gig)
 end
+

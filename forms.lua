@@ -352,20 +352,21 @@ function gigboard.show_application_details_formspec(player_name, gig_id)
     if gig then
         local formspec = {
             "formspec_version[3]",
-            "size[8,6]",
+            "size[8," .. tostring(6 + #gig.applicants) .. "]",
             "label[0.5,0.5;", minetest.formspec_escape("Gig: " .. gig.title), "]",
-            "button[4.5,2;3,1;complete;Complete]",
-            "button[2.5,5;3,1;back;Back]"
         }
 
-        if gig.author == player_name then
-            table.insert(formspec, "button[0.5,2;3,1;approve;Approve]")
+        -- Add an approve button for each applicant
+        for i, applicant in ipairs(gig.applicants or {}) do
+            table.insert(formspec, "button[0.5,".. tostring(1 + i) .. ";7,1;approve_" .. minetest.formspec_escape(applicant) .. ";Approve " .. minetest.formspec_escape(applicant) .. "]")
         end
 
+        table.insert(formspec, "button[0.5," .. tostring(2 + #gig.applicants) .. ";7,1;back;Back]")
         minetest.show_formspec(player_name, "gigboard:application_details_" .. gig_id, table.concat(formspec, ""))
     else
         gigboard.send_notification(player_name, "Gig not found.")
     end
 end
+
 
 
