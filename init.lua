@@ -36,7 +36,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         -- Use a single Back button handler and check formname to decide where to go back
         if formname == "gigboard:post_gig" or formname == "gigboard:add_category" or
            formname == "gigboard:edit_gig" or formname == "gigboard:view_profiles" or
-           formname:find("gigboard:player_profile_") or formname == "gigboard:listings" then
+           formname:find("gigboard:player_profile_") or formname == "gigboard:listings" or formname == "gigboard:applications" then
             gigboard.show_main_menu(player_name)
         elseif formname:find("gigboard:gig_details_") then
             gigboard.show_gig_listings_formspec(player_name)
@@ -146,6 +146,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         if target_player_name then
             gigboard.show_add_review_form(player_name, target_player_name)
         end  -- This ends the "add_review" if block
+    elseif formname == "gigboard:applications" and fields.application_list then
+        local event = minetest.explode_textlist_event(fields.application_list)
+        if event.type == "CHG" then
+            local selected_application = gigboard.get_application(event.index)
+            if selected_application then
+                gigboard.show_application_details(player_name, selected_application)
+            else
+                minetest.log("error", "Application not found for index: " .. tostring(event.index))
+            end
+        end
     end  -- This ends the outermost if-elseif chain
 end)  -- This ends the function
 
