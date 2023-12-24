@@ -36,7 +36,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         -- Use a single Back button handler and check formname to decide where to go back
         if formname == "gigboard:post_gig" or formname == "gigboard:add_category" or
            formname == "gigboard:edit_gig" or formname == "gigboard:view_profiles" or
-           formname:find("gigboard:player_profile_") or formname == "gigboard:listings" or formname == "gigboard:applications" then
+           formname:find("gigboard:player_profile_") or formname == "gigboard:listings" or formname == "gigboard:applications" or formname:find("gigboard:application_details_") then
             gigboard.show_main_menu(player_name)
         elseif formname:find("gigboard:gig_details_") then
             gigboard.show_gig_listings_formspec(player_name)
@@ -187,7 +187,26 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                 local gig_id = formname:match("gigboard:application_details_(%d+)")
                 gigboard.handle_application_details(player_name, tonumber(gig_id), fields)
             end
-        end
+    -- Inside minetest.register_on_player_receive_fields
+    elseif formname:find("gigboard:application_details_") then
+    local gig_id = formname:match("gigboard:application_details_(%d+)")
+    gig_id = tonumber(gig_id)
+
+    if fields.approve then
+        -- Handle the approval of the application
+        gigboard.handle_application_details(player_name, gig_id, fields)
+        gigboard.send_notification(player_name, "Application approved.")
+        gigboard.show_gig_listings_formspec(player_name)
+    elseif fields.complete then
+        -- Handle the completion of the gig
+        gigboard.handle_application_details(player_name, gig_id, fields)
+        gigboard.send_notification(player_name, "Gig completed.")
+        gigboard.show_gig_listings_formspec(player_name)
+    end
+
+    return true  -- Important to return true to indicate that the fields have been handled
+end
+
 end)  -- This ends the function
 
 

@@ -52,31 +52,44 @@ end
 
 
 
--- Function to complete a job
-function gigboard.complete_gig(gig_id)
+-- Function to complete a job and transfer funds
+function gigboard.complete_gig(gig_id, completed_by_player_name)
     local gig = gigboard.get_gig_listing(gig_id)
     if gig and gig.status == "open" then
+        local is_applicant_approved = false
+        for _, approved_applicant in ipairs(gig.approved_applicants or {}) do
+            if approved_applicant == completed_by_player_name then
+                is_applicant_approved = true
+                break
+            end
+        end
+
+        if not is_applicant_approved then
+            gigboard.send_notification(gig.author, "The player completing the gig is not an approved applicant.")
+            return false
+        end
+
         gig.status = "completed"
         gigboard.save_gig_listing(gig)
-        if gig.type == "job" and gig.approved_applicants then
+        if gig.type == "job" then
             local balance = emeraldbank.get_emeralds(gig.author)
-            for _, approved_applicant in ipairs(gig.approved_applicants) do
-                if balance >= gig.fee then
-                    emeraldbank.transfer_emeralds(gig.author, approved_applicant, gig.fee)
-                    gigboard.send_notification(gig.author, "Payment transferred to " .. approved_applicant)
-                    balance = balance - gig.fee  -- Update the balance after each payment
-                else
-                    gigboard.send_notification(gig.author, "Insufficient balance to complete the payment to " .. approved_applicant)
-                    break  -- Exit the loop if the balance is insufficient
-                end
+            if balance >= gig.fee then
+                emeraldbank.transfer_emeralds(gig.author, completed_by_player_name, gig.fee)
+                gigboard.send_notification(gig.author, "Payment transferred to " .. completed_by_player_name)
+            else
+                gigboard.send_notification(gig.author, "Insufficient balance to complete the payment to " .. completed_by_player_name)
+                return false
             end
         else
             gigboard.send_notification(gig.author, gig.type:sub(1,1):upper()..gig.type:sub(2).." marked as completed.")
         end
+        return true
     else
         gigboard.send_notification(gig.author, "Gig not found or already completed.")
+        return false
     end
 end
+
 
 
 
@@ -427,15 +440,45 @@ function gigboard.handle_application_details(player_name, gig_id, fields)
 
     if fields.approve then
         -- Assuming 'approve' is the field name of the approve button in your application details form
-        if gig.status == "open" and not gig.approved_applicant then
-            gig.approved_applicant = player_name -- This should be the name of the applicant
-            gigboard.send_notification(gig.author, player_name .. " has been approved for the gig.")
+        if gig.status == "open" then
+            -- Insert the player_name into the approved_applicants list if not already present
+            gig.approved_applicants = gig.approved_applicants or {}
+            local already_approved = false
+            for _, approved_applicant in pairs(gig.approved_applicants) do
+                if approved_applicant == player_name then
+                    already_approved = true
+                    break
+                end
+            end
+            if not already_approved then
+                table.insert(gig.approved_applicants, player_name)
+                gigboard.send_notification(gig.author, player_name .. " has been approved for the gig.")
+            else
+                gigboard.send_notification(player_name, "You have already been approved for this gig.")
+            end
         end
     elseif fields.complete then
-        -- Assuming 'complete' is the field name of the complete button in your application details form
-        if gig.status == "open" and gig.approved_applicant == player_name then
-            gigboard.complete_gig(gig_id)
-            gigboard.send_notification(player_name, "Gig marked as completed.")
+        -- Handle the completion of the gig
+        if gig.status == "open" and gig.approved_applicants then
+            local completed_by_player_name = nil
+            for _, approved_applicant in pairs(gig.approved_applicants) do
+                if approved_applicant == player_name then
+                    completed_by_player_name = approved_applicant
+                    break
+                end
+            end
+            if completed_by_player_name then
+                local success = gigboard.complete_gig(gig_id, completed_by_player_name)
+                if success then
+                    gigboard.send_notification(player_name, "Gig marked as completed and payment transferred.")
+                else
+                    gigboard.send_notification(player_name, "There was an issue completing the gig.")
+                end
+            else
+                gigboard.send_notification(player_name, "You are not an approved applicant for this gig or it has already been completed.")
+            end
+        else
+            gigboard.send_notification(player_name, "Gig is either not open or you are not approved for it.")
         end
     end
 
