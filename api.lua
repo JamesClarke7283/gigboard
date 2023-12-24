@@ -1,7 +1,6 @@
 -- Function to post a new gig (job or service)
 function gigboard.post_gig(player_name, title, description, fee, category, gig_type)
-    -- Determine the maximum number of gigs allowed
-    local max_gigs = gig_type == "job" and gigboard.config.max_jobs_per_player or gigboard.config.max_services_per_player
+    local max_gigs = gigboard.config.max_gigs_per_player
     local open_gigs = gigboard.get_open_gigs(player_name, gig_type)
     
     if #open_gigs < max_gigs then
@@ -17,9 +16,10 @@ function gigboard.post_gig(player_name, title, description, fee, category, gig_t
         gigboard.save_gig_listing(gig_data)
         gigboard.send_notification(player_name, gig_type:sub(1,1):upper()..gig_type:sub(2).." posted successfully.")
     else
-        gigboard.send_notification(player_name, "You have reached the maximum number of open "..gig_type.."s.")
+        gigboard.send_notification(player_name, "You have reached the maximum number of open gigs.")
     end
 end
+
 
 -- Function to retrieve open gigs posted by a player
 function gigboard.get_open_gigs(player_name, gig_type)
@@ -46,8 +46,7 @@ function gigboard.complete_gig(gig_id)
     if gig and gig.status == "open" then
         gig.status = "completed"
         gigboard.save_gig_listing(gig)
-        if gig.type == "job" then
-            -- Transfer funds for jobs only
+        if gig.type == "job" and gig.approved_applicant then
             local balance = emeraldbank.get_emeralds(gig.author)
             if balance >= gig.fee then
                 emeraldbank.transfer_emeralds(gig.author, gig.approved_applicant, gig.fee)
@@ -56,12 +55,13 @@ function gigboard.complete_gig(gig_id)
                 gigboard.send_notification(gig.author, "Insufficient balance to complete the payment.")
             end
         else
-            gigboard.send_notification(gig.author, "Service marked as completed.")
+            gigboard.send_notification(gig.author, gig.type:sub(1,1):upper()..gig.type:sub(2).." marked as completed.")
         end
     else
         gigboard.send_notification(gig.author, "Gig not found or already completed.")
     end
 end
+
 
 
 -- Function to retrieve a specific job listing
@@ -78,39 +78,40 @@ function gigboard.apply_for_gig(player_name, gig_id)
         if not gigboard.has_applied(gig, player_name) then
             table.insert(gig.applicants, player_name)
             gigboard.save_gig_listing(gig)
-            gigboard.send_notification(player_name, "Applied for gig successfully.")
+            gigboard.send_notification(player_name, "Applied for " .. gig.type:sub(1,1):upper()..gig.type:sub(2) .. " successfully.")
         else
-            gigboard.send_notification(player_name, "Already applied for this gig.")
+            gigboard.send_notification(player_name, "Already applied for this " .. gig.type .. ".")
         end
     else
-        gigboard.send_notification(player_name, "Gig is not available.")
+        gigboard.send_notification(player_name, gig.type:sub(1,1):upper()..gig.type:sub(2) .. " is not available.")
     end
 end
 
+
 -- Function for admin to manage job listings
-function gigboard.admin_manage_job(job_id, action, new_data)
-    local job = gigboard.get_job_listing(job_id)
-    if not job then
-        return false, "Job not found."
+function gigboard.admin_manage_gig(gig_id, action, new_data)
+    local gig = gigboard.get_gig_listing(gig_id)
+    if not gig then
+        return false, "Gig not found."
     end
 
     if action == "delete" then
-        gigboard.delete_job_listing(job_id)
-        return true, "Job deleted successfully."
+        gigboard.delete_gig_listing(gig_id)
+        return true, "Gig deleted successfully."
     elseif action == "edit" then
         for key, value in pairs(new_data) do
-            job[key] = value
+            gig[key] = value
         end
-        gigboard.save_job_listing(job)
-        return true, "Job edited successfully."
+        gigboard.save_gig_listing(gig)
+        return true, "Gig edited successfully."
     end
 
     return false, "Invalid action."
 end
 
 -- Function to delete a job listing
-function gigboard.delete_job_listing(job_id)
-    gigboard.storage:set_string("gig_"..job_id, "") -- Clear the job data
+function gigboard.delete_gig_listing(gig_id)
+    gigboard.storage:set_string("gig_"..gig_id, "") -- Clear the job data
 end
 
 
@@ -130,7 +131,7 @@ function gigboard.get_player_profile(player_name)
     if profile_string and profile_string ~= "" then
         return minetest.deserialize(profile_string)
     else
-        return {name = player_name, reviews = {}, jobs_completed = 0, services_offered = {}}
+        return {name = player_name, reviews = {}, gigs_completed = 0, services_offered = {}}
     end
 end
 

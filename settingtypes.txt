@@ -1,5 +1,3 @@
-# Maximum number of jobs a player can post
-max_jobs_per_player (Max Jobs Per Player) int 5 1 100
+# Maximum number of gigs a player can post
+max_gigs_per_player (Max Gigs Per Player) int 10 1 100
 
-# Maximum number of services a player can offer
-max_services_per_player (Max Services Per Player) int 5 1 100

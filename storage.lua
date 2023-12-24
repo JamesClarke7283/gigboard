@@ -46,12 +46,10 @@ end
 
 -- Function to delete a job listing
 function gigboard.delete_gig_listing(gig_id)
-    -- Clear the job data
-    gigboard.storage:set_string("gig_"..gig_id, "")
-    -- Remove the job ID from the author's job list
-    local gig = gigboard.get_job_listing(gig_id)
+    gigboard.storage:set_string("gig_"..gig_id, "") -- Clear the gig data
+    local gig = gigboard.get_gig_listing(gig_id)
     if gig then
-        local player_gigs = gigboard.get_player_jobs(job.author)
+        local player_gigs = gigboard.get_player_gigs(gig.author) or {}
         for i, id in ipairs(player_gigs) do
             if id == gig_id then
                 table.remove(player_gigs, i)
@@ -61,5 +59,6 @@ function gigboard.delete_gig_listing(gig_id)
         gigboard.storage:set_string(gig.author.."_gigs", minetest.serialize(player_gigs))
     end
 end
+
 
 
