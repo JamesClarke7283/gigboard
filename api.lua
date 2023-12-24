@@ -37,7 +37,7 @@ end
 
 -- Function to retrieve jobs posted by a player
 function gigboard.get_player_gigs(player_name)
-    return gigboard.storage:get_string(player_name.."_gigs") -- Assuming JSON format
+    return gigboard.storage:get_string("gigboard_"..player_name.."_gigs") -- Assuming JSON format
 end
 
 -- Function to complete a job
@@ -67,7 +67,7 @@ end
 -- Function to retrieve a specific job listing
 function gigboard.get_gig_listing(job_id)
     -- Retrieve specific job data from storage
-    return gigboard.storage:get_string("gig_"..job_id) -- Assuming JSON format
+    return gigboard.storage:get_string("gigboard_gig_"..job_id) -- Assuming JSON format
 end
 
 -- Function for a player to apply for a gig (job or service)
@@ -111,7 +111,7 @@ end
 
 -- Function to delete a job listing
 function gigboard.delete_gig_listing(gig_id)
-    gigboard.storage:set_string("gig_"..gig_id, "") -- Clear the job data
+    gigboard.storage:set_string("gigboard_gig_"..gig_id, "") -- Clear the job data
 end
 
 
@@ -127,7 +127,7 @@ end
 
 -- Function to retrieve player profile
 function gigboard.get_player_profile(player_name)
-    local profile_string = gigboard.storage:get_string("profile_"..player_name)
+    local profile_string = gigboard.storage:get_string("gigboard_profile_"..player_name)
     if profile_string and profile_string ~= "" then
         return minetest.deserialize(profile_string)
     else
@@ -137,7 +137,7 @@ end
 
 -- Function to save player profile into mod storage
 function gigboard.save_player_profile(player_name, profile_data)
-    local key = "profile_"..player_name
+    local key = "gigboard_profile_"..player_name
     gigboard.storage:set_string(key, minetest.serialize(profile_data))
 end
 
@@ -281,10 +281,10 @@ end
 
 -- Function to list jobs by category
 function gigboard.list_gigs_by_category(category)
-    local job_count = gigboard.storage:get_int("job_count") or 0
+    local job_count = gigboard.storage:get_int("gigboard_gig_count") or 0
     local filtered_jobs = {}
     for i = 1, job_count do
-        local job_data_string = gigboard.storage:get_string("gig_"..i)
+        local job_data_string = gigboard.storage:get_string("gigboard_gig_"..i)
         if job_data_string ~= "" then
             local job = minetest.deserialize(job_data_string)
             if job.category == category then
