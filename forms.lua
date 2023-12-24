@@ -17,7 +17,7 @@ function gigboard.show_post_gig_formspec(player_name)
         "dropdown[0.5,7;7.5,1;category;" .. categories_list .. ";1]",
         "dropdown[0.5,8;7.5,1;gig_type;" .. gig_types .. ";1]",
         "button[2.5,9;3,1;post_gig;Submit]",  -- Changed 'Post Gig' to 'Submit'
-        "button_exit[5.5,9;2,1;back;Back]"
+        "button[5.5,9;2,1;back;Back]"
     }
     minetest.show_formspec(player_name, "gigboard:post_gig", table.concat(formspec, ""))
 end
@@ -25,20 +25,22 @@ end
 
 -- Function to show the main Gigboard formspec with a personal profile view option
 -- Adjust the main menu to include an option to add categories
-function gigboard.show_main_formspec(player_name)
+-- Function to show the main Gigboard formspec
+function gigboard.show_main_menu(player_name)
     local formspec = table.concat({
         "formspec_version[3]",
         "size[8,9]",
         "label[0.3,0.5;Welcome to Gigboard]",
         "button[0.3,1.5;7.4,0.8;view_gigs;View Gigs]",
         "button[0.3,2.7;7.4,0.8;post_gig;Post Gig]",
-        "button[0.3,3.9;7.4,0.8;add_category;Add Category]",  -- New button to add category
+        "button[0.3,3.9;7.4,0.8;add_category;Add Category]",
         "button[0.3,5.1;7.4,0.8;view_profiles;View Profiles]",
         "button[0.3,6.3;7.4,0.8;view_my_profile;View My Profile]",
         "button_exit[3,7.5;2,1;close;Close]"
     }, "")
     minetest.show_formspec(player_name, "gigboard:main", formspec)
 end
+
 
 
 
@@ -60,7 +62,7 @@ function gigboard.show_gig_listings_formspec(player_name)
 
     formspec[#formspec + 1] = table.concat(list_items, ",")
     formspec[#formspec + 1] = ";1;false]"
-    formspec[#formspec + 1] = "button_exit[0.3,8.5;2,1;back;Back]"
+    formspec[#formspec + 1] = "button[0.3,8.5;2,1;back;Back]"
 
     minetest.show_formspec(player_name, "gigboard:listings", table.concat(formspec))
 end
@@ -75,7 +77,7 @@ function gigboard.show_player_profile(player_name, target_player_name)
     local formspec = {
         "formspec_version[3]",
         "size[8,9]",
-        "label[0.3,0.5;".. minetest.formspec_escape(target_player_name) .."'s Profile]",
+        "label[0.3,0.5;", minetest.formspec_escape(target_player_name), "'s Profile]",
         "label[0.3,1;Reviews:]"
     }
     local y = 1.5
@@ -83,13 +85,13 @@ function gigboard.show_player_profile(player_name, target_player_name)
         formspec[#formspec+1] = "label[0.5,".. y .. ";" .. minetest.formspec_escape(review.reviewer) .. ": " .. review.rating .. " stars - " .. minetest.formspec_escape(review.comment) .. "]"
         y = y + 0.5
     end
-    -- Only add the "Add Review" button if the player is not viewing their own profile
     if player_name ~= target_player_name then
         formspec[#formspec+1] = "button[0.3,".. y .. ";4,1;add_review;Add Review]"
     end
-    formspec[#formspec+1] = "button_exit[3.5,".. (y+0.5) ..";2,1;back;Back]"
+    formspec[#formspec+1] = "button[3.5,".. y+0.5 ..";2,1;back;Back]"
     minetest.show_formspec(player_name, "gigboard:player_profile_" .. target_player_name, table.concat(formspec, ""))
 end
+
 
 
 -- Callback function for receiving fields in formspecs
@@ -110,7 +112,7 @@ function gigboard.show_add_review_form(player_name, target_player_name)
         "field[0.5,1.5;5.5,1;rating;Rating (1-5);]",
         "textarea[0.5,2.5;5.5,1;comment;Comment;]",
         "button[0.5,3.5;2,1;submit_review;Submit]",
-        "button_exit[3.5,3.5;2,1;cancel;Cancel]"
+        "button[3.5,3.5;2,1;cancel;Cancel]"
     }
     minetest.show_formspec(player_name, "gigboard:add_review_" .. target_player_name, table.concat(formspec, ""))
 end
@@ -214,8 +216,11 @@ function gigboard.show_profiles_formspec(player_name)
         formspec[#formspec+1] = "button[0.3,".. y ..";7.4,0.8;profile_".. profile.name ..";" .. minetest.formspec_escape(profile.name) .. "]"
         y = y + 0.8
     end
+    -- Add a back button at the bottom of the formspec
+    formspec[#formspec+1] = "button[0.3,8.5;7.4,0.8;back;Back]"
     minetest.show_formspec(player_name, "gigboard:view_profiles", table.concat(formspec, ""))
 end
+
 
 -- Function to show the form for adding a new category
 function gigboard.show_add_category_formspec(player_name)
@@ -225,10 +230,11 @@ function gigboard.show_add_category_formspec(player_name)
         "label[0.5,0.5;Add a New Category]",
         "field[0.5,1.5;7.5,1;category_name;Category Name;]",
         "button[2.5,3;3,1;add_category;Add Category]",
-        "button_exit[5.5,3;2,1;cancel;Cancel]"
+        "button[5.5,3;2,1;back;Back]"
     }
     minetest.show_formspec(player_name, "gigboard:add_category", table.concat(formspec, ""))
 end
+
 
 -- Function to handle the new category submission
 function gigboard.handle_add_category_submission(player_name, fields)
@@ -263,7 +269,7 @@ function gigboard.show_gig_details(player_name, gig)
         table.insert(formspec, "button[0.5,7;3,1;apply;Apply for this ", gig.type, "]")
     end
 
-    table.insert(formspec, "button_exit[5,7;3,1;back;Back]")
+    table.insert(formspec, "button[5,7;3,1;back;Back]")
 
     -- Add Edit and Delete buttons for authors and admins
     if is_author or player_has_admin_priv then
@@ -302,7 +308,7 @@ function gigboard.show_edit_gig_form(player_name, gig)
         "field[0.5,6;7.5,1;fee;Fee (Emeralds);", tostring(gig.fee), "]",
         "dropdown[0.5,7;7.5,1;category;", categories_list, ";", tostring(current_category_index), "]",  -- Ensure index is a string
         "button[2.5,9;3,1;submit_edit;Submit Changes]",
-        "button_exit[5.5,9;2,1;cancel;Cancel]"
+        "button[5.5,9;2,1;btn_cancel_edit;Cancel]"
     }
 
     -- Display the formspec to the player

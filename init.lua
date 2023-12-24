@@ -18,7 +18,7 @@ dofile(modpath.."/utils.lua")
 minetest.register_chatcommand("gigboard", {
     description = "Open the Gigboard interface",
     func = function(name)
-        gigboard.show_main_formspec(name)
+        gigboard.show_main_menu(name)
     end,
 })
 
@@ -31,6 +31,42 @@ minetest.register_privilege("gigboard_admin", {
 -- Here is where we handle the form submissions
 minetest.register_on_player_receive_fields(function(player, formname, fields)
     local player_name = player:get_player_name()
+
+    if fields.back or fields.btn_back_to_main then
+        -- Use a single Back button handler and check formname to decide where to go back
+        if formname == "gigboard:post_gig" or formname == "gigboard:add_category" or
+           formname == "gigboard:edit_gig" or formname == "gigboard:view_profiles" or
+           formname:find("gigboard:player_profile_") or formname == "gigboard:listings" then
+            gigboard.show_main_menu(player_name)
+        elseif formname:find("gigboard:gig_details_") then
+            gigboard.show_gig_listings_formspec(player_name)
+        end
+        return true
+    end
+
+    -- Back navigation logic for the "Edit Gig" formspec
+    if fields.btn_cancel_edit then
+        gigboard.show_gig_listings_formspec(player_name)
+        return true
+    end
+
+    -- Submission handling for the "Edit Gig" formspec
+    if formname:find("gigboard:edit_gig_") and fields.btn_submit_changes then
+        local gig_id = formname:match("gigboard:edit_gig_(%d+)")
+        local gig = gigboard.get_gig_listing(tonumber(gig_id))
+        if gig and (player_name == gig.author or minetest.check_player_privs(player_name, {gigboard_admin=true})) then
+            -- Update the gig with the new details provided in the fields
+            gig.title = fields.title or gig.title
+            gig.description = fields.description or gig.description
+            gig.fee = tonumber(fields.fee) or gig.fee
+            gig.category = fields.category or gig.category
+            gigboard.save_gig_listing(gig)
+            gigboard.send_notification(player_name, "Gig updated successfully.")
+            -- Show the updated gig listings
+            gigboard.show_gig_listings_formspec(player_name)
+        end
+        return true
+    end
 
     if formname == "gigboard:main" then
         if fields.view_gigs then
@@ -46,8 +82,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end  -- This ends the "gigboard:main" if block
     elseif formname == "gigboard:post_gig" and fields.post_gig then
         gigboard.post_gig(player_name, fields.title, fields.description, fields.fee, fields.category, fields.gig_type)
+        gigboard.show_main_menu(player_name)
     elseif formname == "gigboard:add_category" then
         gigboard.handle_add_category_submission(player_name, fields)
+        gigboard.show_main_menu(player_name)
     elseif formname == "gigboard:listings" then
         if fields.gig_list then
             local event = minetest.explode_textlist_event(fields.gig_list)
