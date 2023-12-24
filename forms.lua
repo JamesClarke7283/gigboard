@@ -27,41 +27,45 @@ end
 -- Adjust the main menu to include an option to add categories
 -- Function to show the main Gigboard formspec
 function gigboard.show_main_menu(player_name)
-    local formspec = table.concat({
+    local formspec = {
         "formspec_version[3]",
         "size[8,9]",
         "label[0.3,0.5;Welcome to Gigboard]",
         "button[0.3,1.5;7.4,0.8;view_gigs;View Gigs]",
         "button[0.3,2.7;7.4,0.8;post_gig;Post Gig]",
-        "button[0.3,3.9;7.4,0.8;applications;View Applications]",
+        "button[0.3,3.9;7.4,0.8;btn_view_applications;View Applications]",  -- Changed the name here for consistency
         "button[0.3,5.1;7.4,0.8;view_profiles;View Profiles]",
         "button[0.3,6.3;7.4,0.8;view_my_profile;View My Profile]",
         "button_exit[3,7.5;2,1;close;Close]"
-    }, "")
-    minetest.show_formspec(player_name, "gigboard:main", formspec)
+    }
+    minetest.show_formspec(player_name, "gigboard:main", table.concat(formspec, ""))
 end
+
 
 -- Function to show the Applications menu formspec
 function gigboard.show_applications_formspec(player_name)
-    local applications = gigboard.get_player_applications(player_name) -- You'll need to implement this function
+    local applications = gigboard.get_player_applications(player_name)
     local formspec = {
         "formspec_version[3]",
         "size[8,9]",
         "label[0.3,0.5;Your Applications]",
         "textlist[0.3,1;7.4,7;applications_list;"
     }
-
+    
     local list_items = {}
     for _, app in ipairs(applications) do
-        table.insert(list_items, minetest.formspec_escape(app.gig.title .. " - " .. app.status))
+        local line = app.gig_title .. " - " .. app.status
+        line = app.applicant and line .. " by " .. app.applicant or line 
+        table.insert(list_items, minetest.formspec_escape(line))
     end
-
+    
     formspec[#formspec + 1] = table.concat(list_items, ",")
     formspec[#formspec + 1] = ";1;false]"
     formspec[#formspec + 1] = "button[0.3,8.5;7.4,0.8;back;Back]"
-
+    
     minetest.show_formspec(player_name, "gigboard:applications", table.concat(formspec))
 end
+
 
 
 

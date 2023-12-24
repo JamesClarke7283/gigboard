@@ -69,7 +69,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     end
 
     if formname == "gigboard:main" then
-        if fields.view_gigs then
+        if fields.btn_view_applications then
+            gigboard.show_applications_formspec(player_name)
+        elseif fields.view_gigs then
             gigboard.show_gig_listings_formspec(player_name)
         elseif fields.post_gig then
             gigboard.show_post_gig_formspec(player_name)

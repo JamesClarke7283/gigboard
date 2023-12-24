@@ -52,13 +52,17 @@ function gigboard.complete_gig(gig_id)
     if gig and gig.status == "open" then
         gig.status = "completed"
         gigboard.save_gig_listing(gig)
-        if gig.type == "job" and gig.approved_applicant then
+        if gig.type == "job" and gig.approved_applicants then
             local balance = emeraldbank.get_emeralds(gig.author)
-            if balance >= gig.fee then
-                emeraldbank.transfer_emeralds(gig.author, gig.approved_applicant, gig.fee)
-                gigboard.send_notification(gig.author, "Payment transferred to " .. gig.approved_applicant)
-            else
-                gigboard.send_notification(gig.author, "Insufficient balance to complete the payment.")
+            for _, approved_applicant in ipairs(gig.approved_applicants) do
+                if balance >= gig.fee then
+                    emeraldbank.transfer_emeralds(gig.author, approved_applicant, gig.fee)
+                    gigboard.send_notification(gig.author, "Payment transferred to " .. approved_applicant)
+                    balance = balance - gig.fee  -- Update the balance after each payment
+                else
+                    gigboard.send_notification(gig.author, "Insufficient balance to complete the payment to " .. approved_applicant)
+                    break  -- Exit the loop if the balance is insufficient
+                end
             end
         else
             gigboard.send_notification(gig.author, gig.type:sub(1,1):upper()..gig.type:sub(2).." marked as completed.")
@@ -67,6 +71,7 @@ function gigboard.complete_gig(gig_id)
         gigboard.send_notification(gig.author, "Gig not found or already completed.")
     end
 end
+
 
 
 
@@ -90,7 +95,8 @@ function gigboard.apply_for_gig(player_name, gig_id)
             if not gigboard.has_applied(gig, player_name) then
                 table.insert(gig.applicants, player_name)
                 gigboard.save_gig_listing(gig)
-                gigboard.send_notification(player_name, "Applied for " .. gig.type:sub(1,1):upper()..gig.type:sub(2) .. " successfully.")
+                local application_type = gig.type == "job" and "Job" or "Service"
+                gigboard.send_notification(player_name, "Applied for " .. application_type .. " successfully.")
             else
                 gigboard.send_notification(player_name, "Already applied for this " .. gig.type .. ".")
             end
@@ -101,7 +107,6 @@ function gigboard.apply_for_gig(player_name, gig_id)
         gigboard.send_notification(player_name, "Gig not found.")
     end
 end
-
 
 
 -- Function for admin to manage job listings
@@ -269,17 +274,34 @@ function gigboard.handle_review_form(player_name, form_name, fields)
     end
 end
 
--- Function to approve an applicant for a job
 function gigboard.approve_applicant(gig_id, applicant_name)
     local gig = gigboard.get_gig_listing(gig_id)
     if gig and gig.status == "open" then
-        gig.approved_applicant = applicant_name
-        gigboard.save_gig_listing(gig)
-        gigboard.send_notification(applicant_name, "Approved for gig: " .. gig.title)
+        gig.approved_applicants = gig.approved_applicants or {}
+        if not gigboard.has_approved(gig, applicant_name) then
+            table.insert(gig.approved_applicants, applicant_name)
+            gigboard.save_gig_listing(gig)
+            local application_type = gig.type == "job" and "Job" or "Service"
+            gigboard.send_notification(applicant_name, "Approved for " .. application_type .. ": " .. gig.title)
+        else
+            gigboard.send_notification(applicant_name, "Applicant already approved.")
+        end
     else
         gigboard.send_notification(applicant_name, "Gig is not available or already taken.")
     end
 end
+
+
+-- Helper function to check if an applicant has already been approved for a gig
+function gigboard.has_approved(gig, applicant_name)
+    for _, approved in ipairs(gig.approved_applicants or {}) do
+        if approved == applicant_name then
+            return true
+        end
+    end
+    return false
+end
+
 
 -- Function to complete a job and transfer funds
 function gigboard.complete_job_with_transfer(job_id)
