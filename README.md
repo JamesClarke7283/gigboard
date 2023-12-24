@@ -1,5 +1,5 @@
-# Gigboard Mod for Minetest
-Gigboard enables players to post and apply for jobs or offer and seek services, fostering a vibrant community marketplace within Minetest.
+# Gigboard
+Gigboard enables players to post and apply for jobs or offer and seek services, fostering a vibrant community marketplace.
 
 ## Key Features
 - **Job and Service Listings:** Players can post and manage job offers or services, with details including Title, Description, Fee, and Type (Job/Service).
